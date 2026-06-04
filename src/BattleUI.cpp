@@ -564,6 +564,12 @@ bool BattleUI::Update() {
         }
     }
     else if (m_UIState == UIState::WAITING_TEXT) {
+    if (m_EscapeSuccessful) {
+        m_BattleOver = true;
+        m_IsTrainerBattle = false;
+        Hide();
+        return true;
+    }
     // 1. ANIMATION LOCK
     if (m_IsMoveAnimating) {
         m_MoveAnimatingTimeout++;
@@ -578,6 +584,7 @@ bool BattleUI::Update() {
   // 2. EMPTY QUEUE CHECK
 if (m_DialogueQueue.empty()) {
     // Wait for all visuals (faint, HP drain) to finish before switching/ending
+
     if (m_Animator->IsBusy()) return true;
 
     auto state = m_BattleLogic->GetState();

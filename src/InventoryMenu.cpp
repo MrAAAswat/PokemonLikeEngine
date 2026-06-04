@@ -2,30 +2,22 @@
 #include "ResourceManager.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
-#include <nlohmann/json.hpp>
 #include <algorithm>
-#include <fstream>
-#include <cctype>
-
-std::string ToLower(std::string str) {
-    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c){ return std::tolower(c); });
-    return str;
-}
 
 InventoryMenu::InventoryMenu(std::shared_ptr<Util::Renderer> renderer)
     : m_Renderer(renderer)
 {
-    // 1. Full Screen Background Canvas Configuration
+    // Background Frame
     m_BoxUI = std::make_shared<Util::GameObject>();
     auto bgImg = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/itemstorage_bg.PNG");
     m_BoxUI->SetDrawable(bgImg);
     m_BoxUI->SetZIndex(80.0f);
-    m_BoxUI->m_Transform.translation = {0.0f, 0.0f}; // Perfectly centered for 1280x720 canvas
-    m_BoxUI->m_Transform.scale = {1.0f, 1.0f};       // Clean 1:1 layout mapping
+    m_BoxUI->m_Transform.translation = {0.0f, 0.0f};
+    m_BoxUI->m_Transform.scale = {1.0f, 1.0f};
     m_BoxUI->SetVisible(false);
     m_Renderer->AddChild(m_BoxUI);
 
-    // 2. Folder Tab Title Text (High-contrast bold font config)
+    // Tab Header Title
     m_HeaderText = std::make_shared<Util::Text>(
         RESOURCE_DIR "/Fonts/power clear.ttf", 34, "ITEMS", Util::Color(255, 255, 255)
     );
@@ -35,55 +27,19 @@ InventoryMenu::InventoryMenu(std::shared_ptr<Util::Renderer> renderer)
     m_HeaderTextObj->SetVisible(false);
     m_Renderer->AddChild(m_HeaderTextObj);
 
-    // 3. Lower Left Hand Selection Preview Box Setup
+    // Bottom-Left Selection Preview Window
     m_LargePreviewIcon = std::make_shared<Util::GameObject>();
     m_LargePreviewIcon->SetZIndex(82.0f);
-    m_LargePreviewIcon->m_Transform.scale = {3.0f, 3.0f}; // Crisp nearest-neighbor upscale for item sprites
-    // Calibrated directly to center within the bottom-left white selection frame box
+    m_LargePreviewIcon->m_Transform.scale = {3.0f, 3.0f}; 
     m_LargePreviewIcon->m_Transform.translation = {-414.0f, -258.0f}; 
     m_LargePreviewIcon->SetVisible(false);
     m_Renderer->AddChild(m_LargePreviewIcon);
-
-    LoadItemTextureRegistry();
 }
 
-void InventoryMenu::LoadItemTextureRegistry() {
-    std::string jsonPath = RESOURCE_DIR "/JSON/items.json"; 
-    std::ifstream file(jsonPath);
-    if (!file.is_open()) {
-        jsonPath = RESOURCE_DIR "/items.json";
-        file.open(jsonPath);
-    }
-
-    if (file.is_open()) {
-        try {
-            nlohmann::json j;
-            file >> j;
-            if (j.contains("items") && j["items"].is_array()) {
-                for (const auto& item : j["items"]) {
-                    if (item.contains("name")) {
-                        std::string name = item["name"].get<std::string>();
-                        std::string texPath = "";
-                        
-                        // Resilient check matching your accurate schema keys
-                        if (item.contains("shopTexturePath")) {
-                            texPath = item["shopTexturePath"].get<std::string>();
-                        } else if (item.contains("texturePath")) {
-                            texPath = item["texturePath"].get<std::string>();
-                        }
-                        
-                        if (!texPath.empty()) {
-                            m_ItemShopTextures[ToLower(name)] = texPath;
-                        }
-                    }
-                }
-            }
-        } catch (...) {}
-    }
-}
-
-void InventoryMenu::Show(const std::map<ItemCategory, std::vector<std::pair<std::string, int>>>& categorizedItems) {
+void InventoryMenu::Show(const std::map<ItemCategory, std::vector<std::pair<std::string, int>>>& categorizedItems,
+                         const std::function<const ItemProperties&(const std::string&)>& getProps) {
     m_CategorizedItems = categorizedItems;
+    m_GetProps = getProps;
     m_CurrentTab = ItemCategory::GENERAL;
     m_SelectedIndex = 0;
     m_ScrollOffset = 0;
@@ -102,6 +58,20 @@ void InventoryMenu::Hide() {
     ClearDisplayItems();
 }
 
+std::string InventoryMenu::GetSelectedItem() const {
+    auto it = m_CategorizedItems.find(m_CurrentTab);
+    if (it != m_CategorizedItems.end() && !it->second.empty()) {
+        if (m_SelectedIndex >= 0 && m_SelectedIndex < static_cast<int>(it->second.size())) {
+            return it->second[m_SelectedIndex].first;
+        }
+    }
+    return "";
+}
+
+ItemCategory InventoryMenu::GetCurrentTab() const {
+    return m_CurrentTab;
+}
+
 bool InventoryMenu::Update() {
     if (m_InputTimer > 0) {
         --m_InputTimer;
@@ -115,7 +85,8 @@ bool InventoryMenu::Update() {
     }
 
     bool needsRedraw = false;
-    const auto& currentList = m_CategorizedItems[m_CurrentTab];
+    auto it = m_CategorizedItems.find(m_CurrentTab);
+    bool hasItems = (it != m_CategorizedItems.end() && !it->second.empty());
 
     if (Util::Input::IsKeyDown(Util::Keycode::RIGHT) || Util::Input::IsKeyDown(Util::Keycode::D)) {
         int nextTab = (static_cast<int>(m_CurrentTab) + 1) % static_cast<int>(ItemCategory::COUNT);
@@ -133,7 +104,8 @@ bool InventoryMenu::Update() {
         needsRedraw = true;
     }
 
-    if (!currentList.empty()) {
+    if (hasItems) {
+        const auto& currentList = it->second;
         if (Util::Input::IsKeyDown(Util::Keycode::UP) || Util::Input::IsKeyDown(Util::Keycode::W)) {
             if (m_SelectedIndex > 0) {
                 m_SelectedIndex--;
@@ -164,18 +136,16 @@ void InventoryMenu::RebuildDisplay() {
     else if (m_CurrentTab == ItemCategory::POKEBALLS) m_HeaderText->SetText("POKEBALLS");
     else if (m_CurrentTab == ItemCategory::KEY_ITEMS) m_HeaderText->SetText("KEY ITEMS");
 
-    // --- FIX: Dynamic Center Alignment Management for Folder Tab Title ---
     float headerW = m_HeaderText->GetSize().x;
     m_HeaderTextObj->m_Transform.translation = { -440.0f + (headerW / 2.0f), 282.0f };
 
     const auto& currentList = m_CategorizedItems[m_CurrentTab];
 
-    // --- CASE: TAB IS EMPTY ---
     if (currentList.empty()) {
         m_LargePreviewIcon->SetVisible(false);
 
         auto txt = std::make_shared<Util::Text>(
-            RESOURCE_DIR "/Fonts/power clear.ttf", 36, "  (Empty)", Util::Color(140, 140, 140)
+            RESOURCE_DIR "/Fonts/power clear.ttf", 34, "  (Empty)", Util::Color(140, 140, 140)
         );
         auto txtObj = std::make_shared<Util::GameObject>();
         txtObj->SetDrawable(txt);
@@ -189,7 +159,6 @@ void InventoryMenu::RebuildDisplay() {
         return;
     }
 
-    // --- CASE: POPULATING THE ROW LINES ---
     int endIndex = std::min(static_cast<int>(currentList.size()), m_ScrollOffset + MAX_VISIBLE_ITEMS);
     int uiRowCounter = 0;
 
@@ -199,51 +168,63 @@ void InventoryMenu::RebuildDisplay() {
         std::string prefix = (i == m_SelectedIndex) ? "> " : "  ";
         std::string lineText = prefix + currentList[i].first + "   x" + std::to_string(currentList[i].second);
 
-        // Increased font size to 36 and applied standard dark charcoal gray text layout
         auto txt = std::make_shared<Util::Text>(
-            RESOURCE_DIR "/Fonts/power clear.ttf", 36, lineText, Util::Color(70, 70, 70)
+            RESOURCE_DIR "/Fonts/power clear.ttf", 34, lineText, Util::Color(70, 70, 70)
         );
         auto txtObj = std::make_shared<Util::GameObject>();
         txtObj->SetDrawable(txt);
         txtObj->SetZIndex(81.0f);
 
-        // --- FIX: Forces left-edge alignment despite center-anchored engine defaults ---
         float textW = txt->GetSize().x;
         txtObj->m_Transform.translation = { TEXT_OFFSET_X + (textW / 2.0f), yPos };
 
         m_Renderer->AddChild(txtObj);
         m_ItemTexts.push_back(txtObj);
-
-        // --- HOVER PREVIEW ICON RENDERING ---
-        if (i == m_SelectedIndex) {
-            std::string itemNameKey = ToLower(currentList[i].first);
-            if (m_ItemShopTextures.count(itemNameKey) > 0) {
-                std::string rawPath = m_ItemShopTextures[itemNameKey];
-                std::string fullTexturePath = rawPath;
-
-                // Built-in intelligent lookup sequence to handle any JSON path layout variant safely
-                if (!std::ifstream(fullTexturePath).good()) {
-                    fullTexturePath = RESOURCE_DIR "/" + rawPath;
-                }
-                if (!std::ifstream(fullTexturePath).good()) {
-                    fullTexturePath = RESOURCE_DIR "/UI/" + rawPath;
-                }
-                if (!std::ifstream(fullTexturePath).good()) {
-                    fullTexturePath = RESOURCE_DIR "/Items/" + rawPath;
-                }
-
-                auto iconImg = ResourceManager::GetImageStore().Get(fullTexturePath);
-                if (iconImg) {
-                    m_LargePreviewIcon->SetDrawable(iconImg);
-                    m_LargePreviewIcon->SetVisible(true);
-                } else {
-                    m_LargePreviewIcon->SetVisible(false);
-                }
-            } else {
-                m_LargePreviewIcon->SetVisible(false);
-            }
-        }
         uiRowCounter++;
+    }
+
+    UpdatePreviewImage();
+}
+
+void InventoryMenu::UpdatePreviewImage() {
+    const auto& currentList = m_CategorizedItems[m_CurrentTab];
+    if (m_SelectedIndex < 0 || m_SelectedIndex >= static_cast<int>(currentList.size())) {
+        m_LargePreviewIcon->SetVisible(false);
+        return;
+    }
+
+    std::string itemName = currentList[m_SelectedIndex].first;
+    std::string path = "";
+
+    // 1. Try pulling the registry path if the lambda was provided
+    if (m_GetProps) {
+        path = m_GetProps(itemName).shopTexturePath;
+    }
+
+    std::shared_ptr<Util::Image> img = nullptr;
+    if (!path.empty()) {
+        img = ResourceManager::GetImageStore().Get(path);
+    }
+
+    // 2. Resilient Fallback (If getProps is null or path is empty)
+    if (!img) {
+        std::vector<std::string> fallbacks = {
+            RESOURCE_DIR "/Items/" + itemName + ".png",
+            RESOURCE_DIR "/UI/" + itemName + ".png",
+            RESOURCE_DIR "/Items/" + itemName + ".PNG",
+            RESOURCE_DIR "/UI/" + itemName + ".PNG"
+        };
+        for (const auto& p : fallbacks) {
+            img = ResourceManager::GetImageStore().Get(p);
+            if (img) break;
+        }
+    }
+
+    if (img) {
+        m_LargePreviewIcon->SetDrawable(img);
+        m_LargePreviewIcon->SetVisible(true);
+    } else {
+        m_LargePreviewIcon->SetVisible(false);
     }
 }
 

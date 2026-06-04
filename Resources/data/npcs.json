@@ -291,6 +291,30 @@
         ],
         "flags": []
       }
+    },
+      {
+      "id": 111,
+      "texture": "TA2",
+      "visualOffsetY": -8.0,
+      "zIndex": 1.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "Grant",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "LOOK_AROUND",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "What have you done this week",
+          "Are you ready to show me your progress"
+        ],
+        "flags": []
+      }
     }
   ]
 }

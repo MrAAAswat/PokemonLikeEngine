@@ -32,6 +32,8 @@ public:
     // Call before SetVisible(true) to show player stats
     void SetPlayerInfo(int money, int partySize);
 
+    
+
 private:
     void BuildMenuGraphics();
     void UpdateCursorPosition();

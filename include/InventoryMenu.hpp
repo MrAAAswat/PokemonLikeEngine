@@ -1,39 +1,36 @@
-#pragma once
+#ifndef INVENTORY_MENU_HPP
+#define INVENTORY_MENU_HPP
 
+#include "pch.hpp"
+#include "Item.hpp"
+#include "Map.hpp" // For ItemProperties definition
+#include "Util/Renderer.hpp"
 #include "Util/GameObject.hpp"
 #include "Util/Text.hpp"
-#include "Util/Renderer.hpp"
-#include "Item.hpp" 
-#include <memory>
-#include <string>
 #include <vector>
+#include <string>
 #include <map>
-#include <unordered_map>
+#include <memory>
+#include <functional>
 
 class InventoryMenu {
 public:
-    InventoryMenu(std::shared_ptr<Util::Renderer> renderer);
-    ~InventoryMenu() = default;
+    explicit InventoryMenu(std::shared_ptr<Util::Renderer> renderer);
 
-    void Show(const std::map<ItemCategory, std::vector<std::pair<std::string, int>>>& categorizedItems);
+    // Default getProps to nullptr to prevent breaking existing single-argument calls
+    void Show(const std::map<ItemCategory, std::vector<std::pair<std::string, int>>>& categorizedItems,
+              const std::function<const ItemProperties&(const std::string&)>& getProps = nullptr);
     void Hide();
     bool Update(); 
 
-    std::string GetSelectedItem() const {
-        if (m_CategorizedItems.count(m_CurrentTab) == 0) return "";
-        const auto& list = m_CategorizedItems.at(m_CurrentTab);
-        if (list.empty() || m_SelectedIndex >= static_cast<int>(list.size())) return "";
-        return list[m_SelectedIndex].first;
-    }
-
-    ItemCategory GetCurrentTab() const { 
-        return m_CurrentTab; 
-    }
+    // Public getters requested by BattleUI.cpp
+    std::string GetSelectedItem() const;
+    ItemCategory GetCurrentTab() const;
 
 private:
-    void LoadItemTextureRegistry();
     void RebuildDisplay();
     void ClearDisplayItems();
+    void UpdatePreviewImage();
 
     std::shared_ptr<Util::Renderer> m_Renderer;
 
@@ -43,24 +40,26 @@ private:
     std::shared_ptr<Util::Text>       m_HeaderText;
     std::shared_ptr<Util::GameObject> m_LargePreviewIcon;  
 
-    // Render array list tracking
+    // Text tracking
     std::vector<std::shared_ptr<Util::GameObject>> m_ItemTexts;
 
-    // State Tracking
+    // State Tracking (Completely Unchanged)
     std::map<ItemCategory, std::vector<std::pair<std::string, int>>> m_CategorizedItems;
     ItemCategory m_CurrentTab = ItemCategory::GENERAL;
     
-    // Internal JSON item texture mapping cache 
-    std::unordered_map<std::string, std::string> m_ItemShopTextures;
+    // Property lookup function hook
+    std::function<const ItemProperties&(const std::string&)> m_GetProps;
     
     int m_SelectedIndex = 0;
     int m_ScrollOffset = 0;
     
-    // --- 1280x720 NATIVE CALIBRATED LAYOUT METRICS ---
-    static constexpr int   MAX_VISIBLE_ITEMS = 7;        // Matches the 7 notepad slots
-    static constexpr float START_Y           = 242.0f;   // Calibrated baseline for top dotted line
-    static constexpr float LINE_SPACING       = 59.5f;    // Scaled distance matching 60px grid perfectly
-    static constexpr float TEXT_OFFSET_X      = -340.0f;  // Locked left alignment boundary for item list
+    // --- 1280x720 METRICS ---
+    static constexpr int   MAX_VISIBLE_ITEMS = 7;        
+    static constexpr float START_Y           = 242.0f;   
+    static constexpr float LINE_SPACING       = 59.5f;    
+    static constexpr float TEXT_OFFSET_X      = -340.0f;  
     static constexpr int   INPUT_DELAY        = 10;       
     int m_InputTimer = 0;
 };
+
+#endif

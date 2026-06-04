@@ -599,14 +599,21 @@ std::shared_ptr<Pokemon> App::GenerateWildPokemon(const std::string& mapPath) {
 void App::ProcessShopState() {
     ShopMenu::Result result = m_ShopMenu->Update();
 
+    // Reusable property lookup
+    auto getProps = [](const std::string& name) -> const ItemProperties& {
+        return ItemDatabase::GetProperties(name);
+    };
+
     switch (result) {
         case ShopMenu::Result::BUY_ITEM: {
             std::string itemName = m_ShopMenu->GetSelectedItemName();
-            const auto& props = ItemDatabase::GetProperties(itemName);
+            const auto& props = getProps(itemName);
 
+            // Locate the shop entry to check / decrease stock
             auto it = std::find_if(m_CurrentShopData.items.begin(), m_CurrentShopData.items.end(),
                 [&](const ShopItem& si) { return si.itemName == itemName; });
             int stock = (it != m_CurrentShopData.items.end()) ? it->quantity : -1;
+
             if (stock == 0) {
                 LOG_INFO("Item out of stock!");
                 break;
@@ -614,37 +621,44 @@ void App::ProcessShopState() {
 
             if (m_Character->SpendMoney(props.buyPrice)) {
                 m_Character->AddItem(itemName, props.category, 1);
-                if (it != m_CurrentShopData.items.end() && stock > 0) {
-                    it->quantity--;
-                }
 
-                // Refresh buy list with updated money
-                auto getProps = [](const std::string& name) -> const ItemProperties& {
-                    return ItemDatabase::GetProperties(name);
-                };
+                // Decrease stock if limited
+                if (it != m_CurrentShopData.items.end() && stock > 0)
+                    it->quantity--;
+
+                // 1. Update the stored buy data (stock changed)
+                m_ShopMenu->SetBuyData(m_CurrentShopData.items, getProps);
+
+                // 2. Update the stored player inventory
+                std::map<std::string, int> inv;
+                for (const auto& [name, data] : m_Character->GetInventory())
+                    inv[name] = data.quantity;
+                m_ShopMenu->SetPlayerInventory(inv);
+
+                // 3. Refresh the buy list and show current money
                 m_ShopMenu->LoadBuyItems(m_CurrentShopData.items, getProps);
                 m_ShopMenu->Show(ShopMenu::Mode::BUY, m_Character->GetMoney());
             } else {
                 LOG_INFO("Not enough money!");
-                // Optionally show a temporary message; for now just do nothing
             }
             break;
         }
 
         case ShopMenu::Result::SELL_ITEM: {
             std::string itemName = m_ShopMenu->GetSelectedItemName();
-            const auto& props = ItemDatabase::GetProperties(itemName);
+            const auto& props = getProps(itemName);
+
             if (m_Character->GetItemCount(itemName) > 0) {
                 m_Character->RemoveItem(itemName, 1);
                 m_Character->AddMoney(props.sellPrice);
 
-                // Refresh sell list with updated money
+                // 1. Update the stored player inventory
                 std::map<std::string, int> inv;
                 for (const auto& [name, data] : m_Character->GetInventory())
                     inv[name] = data.quantity;
-                auto getProps = [](const std::string& name) -> const ItemProperties& {
-                    return ItemDatabase::GetProperties(name);
-                };
+                m_ShopMenu->SetPlayerInventory(inv);
+
+                // 2. Refresh the sell list and show updated money
                 m_ShopMenu->LoadSellItems(inv, getProps);
                 m_ShopMenu->Show(ShopMenu::Mode::SELL, m_Character->GetMoney());
             }
@@ -657,6 +671,7 @@ void App::ProcessShopState() {
             break;
         }
 
-        default: break;
+        default:
+            break;
     }
 }
