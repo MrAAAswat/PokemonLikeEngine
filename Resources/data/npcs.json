@@ -33,13 +33,17 @@
       "zIndex": 0.8,
       "dynamicZ": true,
       "action": "SHOP",
-      "actionData": "Mart_Potions",
+      "actionData": "",
+      "shopItems": [
+        { "itemName": "Potion",   "quantity": -1 },
+        { "itemName": "Pokeball", "quantity": -1 }
+      ],
       "itemCategory": "GENERAL",
       "flagOnInteract": "",
       "movement": {
         "type": "STILL",
-        "moveInterval": 2.0,
-        "wanderRadius": 3,
+        "moveInterval": 0.0,
+        "wanderRadius": 0.0,
         "patrolPoints": []
       },
       "dialogue": {
@@ -193,7 +197,7 @@
       "itemCategory": "KEY_ITEMS",
       "flagOnInteract": "roadblock_cleared",
       "flagToHide": "roadblock_cleared",
-      "facing": "Left",
+      "facing": "Right",
       "movement": {
         "type": "STILL",
         "moveInterval": 2.0,

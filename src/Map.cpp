@@ -194,9 +194,12 @@ void Map::LoadItemsFromJSON(const std::string& path) {
 
         m_ItemRegistry[id] = {
             PROP_DIR + entry["texture"].get<std::string>(),
+            PROP_DIR + entry.value("shopTexture", ""),
             entry["name"].get<std::string>(),
             StringToCategory(entry.value("category", "GENERAL")),
-            entry.value("zIndex", 0.5f)
+            entry.value("zIndex", 0.5f),
+            entry.value("buyPrice", 0),         
+            entry.value("sellPrice", 0)        
         };
         ++loaded;
     }
@@ -280,6 +283,19 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         } else {
             LOG_WARN("NPCRegistry: NPC id={} has no \"dialogue\" block — "
                      "will be silent on interaction", id);
+        }
+        // ── Shop Items ────────────────────────────────────────────────────────
+        if (entry.contains("shopItems") && entry["shopItems"].is_array()) {
+            for (const auto& item : entry["shopItems"]) {
+                if (!item.contains("itemName")) {
+                    LOG_WARN("NPCRegistry: NPC id={} shop item missing \"itemName\", skipping", id);
+                    continue;
+                }
+                ShopItem si;
+                si.itemName = item["itemName"].get<std::string>();
+                si.quantity = item.value("quantity", -1);   // -1 = unlimited
+                props.shopItems.push_back(std::move(si));
+            }
         }
 
         // ── Movement ────────────────────────────────────────────────────────
@@ -424,6 +440,7 @@ void Map::SpawnTilesAndProps() {
                 npc->SetDialogue(npcProps.defaultDialogue, npcProps.conditionalDialogue);
 
                 npc->SetAction(npcProps.actionType, npcProps.actionData, npcProps.itemCategory);
+                npc->SetShopItems(npcProps.shopItems);   // 🔻 This line is crucial!
                 if (npcProps.actionType == NPCAction::BATTLE) {
                     auto loadedParty = TrainerDatabase::CreateTrainerParty(npcProps.actionData);
                     for (const auto& p : loadedParty) npc->GetParty().push_back(p);
@@ -568,29 +585,29 @@ bool Map::IsWalkable(int x, int y) {
     // 1. Bounds
     if (x < 0 || x >= (int)m_LevelData[0].size() ||
         y < 0 || y >= (int)m_LevelData.size()) {
-        printf("WALK FAILED: Tile (%d, %d) is out of bounds!\n", x, y);
+        //printf("WALK FAILED: Tile (%d, %d) is out of bounds!\n", x, y);
         return false;
     }
  
     // 2. Ground tile
     int tileID = m_LevelData[y][x];
     if (m_TileRegistry.count(tileID) == 0) {
-        printf("WALK FAILED: Ground Tile ID %d is missing from registry!\n", tileID);
+        //printf("WALK FAILED: Ground Tile ID %d is missing from registry!\n", tileID);
         return false;
     }
     if (!m_TileRegistry[tileID].isWalkable) {
-        printf("WALK FAILED: Ground Tile ID %d is marked as solid!\n", tileID);
+        //printf("WALK FAILED: Ground Tile ID %d is marked as solid!\n", tileID);
         return false;
     }
  
     // 3. Props and items
     int propID = m_PropData[y][x];
     if (m_PropRegistry.count(propID) > 0 && !m_PropRegistry[propID].isWalkable) {
-        printf("WALK FAILED: Blocked by solid Prop ID %d!\n", propID);
+        //printf("WALK FAILED: Blocked by solid Prop ID %d!\n", propID);
         return false;
     }
     if (m_ItemRegistry.count(propID) > 0) {
-        printf("WALK FAILED: Blocked by unpicked Item ID %d!\n", propID);
+        //printf("WALK FAILED: Blocked by unpicked Item ID %d!\n", propID);
         return false;
     }
  
@@ -599,7 +616,7 @@ bool Map::IsWalkable(int x, int y) {
     for (const auto& npc : m_NPCs) {
         if (!npc->IsActive()) continue;
         if (npc->GetGridX() == x && npc->GetGridY() == y) {
-            printf("WALK FAILED: Blocked by an active NPC at (%d, %d)!\n", x, y);
+            //printf("WALK FAILED: Blocked by an active NPC at (%d, %d)!\n", x, y);
             return false;
         }
     }
@@ -607,10 +624,10 @@ bool Map::IsWalkable(int x, int y) {
     // 5. Player tile — NPCs cannot walk through the player.
     //    Sentinel -1,-1 is never a valid tile so this is a no-op until
     //    SetPlayerGridPosition() has been called at least once.
-    printf("IsWalkable(%d,%d) player at (%d,%d)\n", x, y, m_PlayerGridX, m_PlayerGridY);
+    //printf("IsWalkable(%d,%d) player at (%d,%d)\n", x, y, m_PlayerGridX, m_PlayerGridY);
 
     if (m_PlayerGridX == x && m_PlayerGridY == y) {
-        printf("WALK FAILED: Blocked by player!\n");
+        //printf("WALK FAILED: Blocked by player!\n");
         return false;
     }
  

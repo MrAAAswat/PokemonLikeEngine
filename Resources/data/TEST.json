@@ -3080,5 +3080,65 @@
       }
     ]
   
+  },{
+    "name": "Move:TACKLE",
+    "graphic": "PRAS- Strike.png",
+    "position": 3,
+    "position_name": "both",
+    "id": -1,
+    "frames": [
+      [],
+      [
+        {
+          "pattern": 0,
+          "x": 371,
+          "y": 99,
+          "zoom_x": 100,
+          "zoom_y": 100,
+          "rotation": 0,
+          "mirror": false,
+          "blend_type": 1,
+          "opacity": 100,
+          "focus": 0
+        }
+      ],
+      [
+        {
+          "pattern": 0,
+          "x": 371,
+          "y": 99,
+          "zoom_x": 100,
+          "zoom_y": 100,
+          "rotation": 0,
+          "mirror": false,
+          "blend_type": 1,
+          "opacity": 255,
+          "focus": 0
+        }
+      ],
+      [
+        {
+          "pattern": 0,
+          "x": 371,
+          "y": 99,
+          "zoom_x": 100,
+          "zoom_y": 100,
+          "rotation": 0,
+          "mirror": false,
+          "blend_type": 1,
+          "opacity": 100,
+          "focus": 0
+        }
+      ],
+      [],
+      [],
+      []
+    ],
+    "timings": [
+      {
+        "type": 0,
+        "frame": 0
+      }
+    ]
   }
 ]

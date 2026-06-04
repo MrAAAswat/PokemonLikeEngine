@@ -6,7 +6,8 @@
 #include "Item.hpp"
 #include <string>
 #include <vector>
-#include <utility> // std::pair
+#include <utility> 
+#include "ShopData.hpp" 
 
 // ============================================================
 //  NPCAction — what happens after dialogue closes
@@ -109,6 +110,8 @@ public:
 
     std::string m_InteractFlag;
     bool IsActive() const;
+    void SetShopItems(const std::vector<ShopItem>& items) { m_ShopItems = items; }
+    const std::vector<ShopItem>& GetShopItems() const { return m_ShopItems; }
 
 
 protected:
@@ -117,6 +120,7 @@ protected:
 private:
     // ---- Sprite ----
     std::string m_SpritePath;
+    std::vector<ShopItem> m_ShopItems;
 
     // ---- Dialogue ----
     std::vector<std::string>      m_DefaultDialogue;

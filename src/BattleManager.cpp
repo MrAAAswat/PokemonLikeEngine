@@ -235,31 +235,25 @@ BattleManager::TurnResult BattleManager::SelectMove(int moveIndex) {
 
     if (playerGoesFirst) {
         result = ExecutePlayerMove(moveIndex);
-        // INJECT TAG: Tell the UI what the enemy's HP is AFTER the player's attack!
-        result.message += "\n[SYNC_ENEMY]" + std::to_string(m_EnemyPokemon->GetCurrentHP());
+        // REMOVED: duplicate SYNC_ENEMY – already inside ExecutePlayerMove
 
         if (!result.enemyFainted && !m_EnemyPokemon->IsFainted()) {
             TurnResult enemyResult = ExecuteEnemyMove();
             result.message += "\n" + enemyResult.message;
-            // INJECT TAG: Tell the UI what the player's HP is AFTER the enemy's attack!
-            result.message += "\n[SYNC_PLAYER]" + std::to_string(m_PlayerPokemon->GetCurrentHP());
-            
+            // REMOVED: duplicate SYNC_PLAYER – already inside ExecuteEnemyMove
             result.playerFainted = enemyResult.playerFainted;
         }
     } else {
         TurnResult enemyResult = ExecuteEnemyMove();
         result.message = enemyResult.message;
-        // INJECT TAG: Tell the UI what the player's HP is AFTER the enemy's attack!
-        result.message += "\n[SYNC_PLAYER]" + std::to_string(m_PlayerPokemon->GetCurrentHP());
-        
+        // REMOVED: duplicate SYNC_PLAYER
+
         result.playerFainted = enemyResult.playerFainted;
 
         if (!result.playerFainted && !m_PlayerPokemon->IsFainted()) {
             TurnResult playerResult = ExecutePlayerMove(moveIndex);
             result.message += "\n" + playerResult.message;
-            // INJECT TAG: Tell the UI what the enemy's HP is AFTER the player's attack!
-            result.message += "\n[SYNC_ENEMY]" + std::to_string(m_EnemyPokemon->GetCurrentHP());
-            
+            // REMOVED: duplicate SYNC_ENEMY
             result.enemyFainted = playerResult.enemyFainted;
             result.expGained = playerResult.expGained;
         }
@@ -280,9 +274,6 @@ BattleManager::TurnResult BattleManager::SelectMove(int moveIndex) {
 // ==========================================
 // EXECUTE PLAYER MOVE
 // ==========================================
-// ==========================================
-// EXECUTE PLAYER MOVE
-// ==========================================
 BattleManager::TurnResult BattleManager::ExecutePlayerMove(int moveIndex) {
     TurnResult result;
     result.playerFainted = false;
@@ -293,30 +284,30 @@ BattleManager::TurnResult BattleManager::ExecutePlayerMove(int moveIndex) {
     const std::string& moveName = moves[moveIndex];
     const MoveData& moveData = MoveDatabase::GetMove(moveName);
 
+    // 1. "used" text comes first
     result.message = m_PlayerPokemon->GetName() + " used " + moveName + "!";
 
-    // 1. Accuracy Check
+    // 2. Accuracy Check
     if (!AccuracyCheck(moveData.accuracy)) {
         result.message += "\n" + m_PlayerPokemon->GetName() + "'s attack missed!";
         return result;
     }
 
-    // 2. Animation Tag
-    //result.message += "\n[ANIM:" + moveData.animation_key + ":TARGET_ENEMY]";
+    // 3. Animation tag (after text, before damage) — BattleManager owns the tag
+    result.message += "\n[ANIM:" + moveData.animation_key + ":TARGET_ENEMY]";
 
-    // 3. Damage Calculation & Application
+    // 4. Damage Calculation & Application
     int damage = CalculateDamage(m_PlayerPokemon.get(), m_EnemyPokemon.get(), moveName);
     m_EnemyPokemon->TakeDamage(damage);
 
-    // 4. THE MISSING LINK: Sync Tag
-    // We send the NEW current HP to the UI so it can animate the bar and check for 0
+    // 5. Sync enemy HP (after animation, HP drain happens while animation blocks)
     result.message += "\n[SYNC_ENEMY]" + std::to_string(m_EnemyPokemon->GetCurrentHP());
 
-    // 5. Effectiveness
+    // 6. Effectiveness
     std::string effMsg = EffectivenessMessage(moveData.type, m_EnemyPokemon.get());
     if (!effMsg.empty()) result.message += "\n" + effMsg;
 
-    // 6. Faint Check
+    // 7. Faint Check
     if (m_EnemyPokemon->IsFainted()) {
         result.enemyFainted = true;
         result.message += "\n" + m_EnemyPokemon->GetName() + " fainted!";
@@ -329,9 +320,6 @@ BattleManager::TurnResult BattleManager::ExecutePlayerMove(int moveIndex) {
     return result;
 }
 
-// ==========================================
-// EXECUTE ENEMY MOVE (simple random AI)
-// ==========================================
 // ==========================================
 // EXECUTE ENEMY MOVE (simple random AI)
 // ==========================================
@@ -352,14 +340,14 @@ BattleManager::TurnResult BattleManager::ExecuteEnemyMove() {
         return result;
     }
 
-    // Animation Tag
+    // Animation Tag (targets player)
     result.message += "\n[ANIM:" + move.animation_key + ":TARGET_PLAYER]";
 
     // Damage & Sync
     int damage = CalculateDamage(m_EnemyPokemon.get(), m_PlayerPokemon.get(), moveName);
     m_PlayerPokemon->TakeDamage(damage);
 
-    // INJECT SYNC TAG: Updates player's HP bar and triggers player faint if HP <= 0
+    // SYNC_PLAYER tag – HP bar drains while animation holds the text progression
     result.message += "\n[SYNC_PLAYER]" + std::to_string(m_PlayerPokemon->GetCurrentHP());
 
     std::string effMsg = EffectivenessMessage(move.type, m_PlayerPokemon.get());
@@ -372,6 +360,7 @@ BattleManager::TurnResult BattleManager::ExecuteEnemyMove() {
 
     return result;
 }
+
 // ==========================================
 // THROW POKEBALL
 // ==========================================
@@ -492,7 +481,6 @@ void BattleManager::UseItem(std::shared_ptr<Character> player, const std::string
         return;
     }
 }
-
 
 BattleManager::TurnResult BattleManager::ProcessEnemyTurn() {
     return ExecuteEnemyMove();

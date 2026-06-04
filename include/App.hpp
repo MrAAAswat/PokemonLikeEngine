@@ -10,6 +10,14 @@
 #include "Map.hpp"
 #include "GameConfig.hpp"
 #include "util/Text.hpp"
+#include "ShopMenu.hpp"
+#include "ShopData.hpp"
+#include "TrainerDatabase.hpp"
+#include "MoveDatabase.hpp"
+#include "Item.hpp"
+#include "NPC.hpp"
+
+
 
 struct InteractionResult {
     std::vector<std::string> dialogueLines; 
@@ -25,7 +33,8 @@ public:
         START_MENU,       
         POKEMON_MENU,     
         INVENTORY_MENU,
-        BATTLE,   
+        BATTLE,
+        SHOP,   
         END
     };
 
@@ -48,6 +57,8 @@ public:
 private:
     void ValidTask();
     int m_SwapIndex = -1;
+    std::shared_ptr<ShopMenu> m_ShopMenu;
+    ShopData m_CurrentShopData;   
     std::shared_ptr<Util::Renderer> m_Renderer;
     std::shared_ptr<Map> m_Map;
     std::shared_ptr<Util::GameObject> m_DialogueBoxUI;
@@ -80,6 +91,7 @@ private:
     void ProcessPokemonMenuState();
     void ProcessOverworldUpdateState();
     void ProcessBattleState();
+    void ProcessShopState();
 
     // Overworld sub-helpers
     void HandleOverworldInteraction(int checkX, int checkY);

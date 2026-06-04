@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Util/GameObject.hpp"
 #include "Util/Text.hpp"
 #include "Util/Renderer.hpp"
@@ -15,40 +14,45 @@ public:
         BAG,
         SAVE,
         EXIT,
-        CANCEL       // returned when Escape is pressed
+        CANCEL
     };
 
     struct Item {
         std::string label;
-        Option      value;      // which enum this line corresponds to
+        Option      value;
+        std::string iconPath;   // optional – path to small icon
     };
 
     explicit StartMenu(std::shared_ptr<Util::Renderer> renderer);
     ~StartMenu() = default;
 
     void SetVisible(bool visible);
-    Option Update();           // returns selected option, or NONE/CANCEL
+    Option Update();
+
+    // Call before SetVisible(true) to show player stats
+    void SetPlayerInfo(int money, int partySize);
 
 private:
-    void BuildMenuGraphics();  // (re)create text objects from m_Items
+    void BuildMenuGraphics();
     void UpdateCursorPosition();
-    Option ProcessInput();     // handles keys, returns chosen option
-
-    // ── Configurable layout ────────────────────────────────────────
-    static constexpr float BOX_SCALE_X      = 1.0f;
-    static constexpr float BOX_POS_X        = 331.5f;
-    static constexpr float BOX_POS_Y        = 0.0f;
-    static constexpr float TEXT_START_X     = 170.0f;
-    static constexpr float TEXT_START_Y     = 220.0f;   // top of first line
-    static constexpr float CURSOR_X         = 60.0f;
-    static constexpr float CURSOR_OFFSET_X  = -20.0f;   // fine‑tune relative to text
-    static constexpr float LINE_SPACING     = 40.0f;
-    static constexpr int   INPUT_COOLDOWN   = 10;       // frames between moves
-    static constexpr float TEXT_LEFT_MARGIN = 100.0f;   // change to whatever you like
+    Option ProcessInput();
 
     std::shared_ptr<Util::Renderer> m_Renderer;
 
-    // Master list – add/remove/reorder items here and nothing else needs to change
+    // Layout constants
+    static constexpr float BOX_SCALE_X      = 1.0f;
+    static constexpr float BOX_POS_X        = 331.5f;
+    static constexpr float BOX_POS_Y        = 0.0f;
+    static constexpr float INFO_START_Y     = 150.0f;   // top info line
+    static constexpr float INFO_SPACING     = 35.0f;
+    static constexpr float OPTION_START_Y   = 70.0f;    // first menu option (shifted down)
+    static constexpr float TEXT_LEFT_MARGIN = 170.0f;
+    static constexpr float LINE_SPACING     = 40.0f;
+    static constexpr float CURSOR_OFFSET_X  = -50.0f;
+    static constexpr float SPRITE_SCALE     = 2.0f;
+    static constexpr int   INPUT_COOLDOWN   = 10;
+
+    // Data – edit this to change the menu
     const std::vector<Item> m_Items = {
         {"POKEMON", Option::POKEMON},
         {"BAG",     Option::BAG},
@@ -61,6 +65,16 @@ private:
 
     // UI elements
     std::shared_ptr<Util::GameObject> m_BoxUI;
-    std::vector<std::shared_ptr<Util::GameObject>> m_ItemTexts;
+    std::vector<std::shared_ptr<Util::GameObject>> m_ItemTexts;   // one per option
+    std::vector<std::shared_ptr<Util::GameObject>> m_ItemSprites; // icons
     std::shared_ptr<Util::GameObject> m_CursorUI;
+
+    // Player info (static text)
+    std::shared_ptr<Util::GameObject> m_MoneyTextObj;
+    std::shared_ptr<Util::Text>       m_MoneyText;
+    std::shared_ptr<Util::GameObject> m_PartyTextObj;
+    std::shared_ptr<Util::Text>       m_PartyText;
+
+    void BuildInfoDisplay();
+    void ClearAll();
 };

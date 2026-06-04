@@ -1,10 +1,4 @@
 #include "App.hpp"
-#include "Map.hpp"
-#include "Player.hpp"
-#include "TrainerDatabase.hpp"
-#include "MoveDatabase.hpp"
-#include "Item.hpp"
-#include "NPC.hpp"
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "GameConfig.hpp"
@@ -23,6 +17,8 @@
 #include "PokemonDatabase.hpp"
 #include "MapGenerator.hpp"
 #include "BattleAnimation.hpp"
+#include "ItemDatabase.hpp"
+
 
 const std::string RES      = std::string(RESOURCE_DIR);
 const std::string MAP_DIR  = RES + "/maps/";
@@ -63,6 +59,7 @@ void App::Update() {
         case State::POKEMON_MENU:   ProcessPokemonMenuState();    break;
         case State::UPDATE:         ProcessOverworldUpdateState(); break;
         case State::BATTLE:         ProcessBattleState();         break;
+        case State::SHOP:           ProcessShopState(); break;
         case State::END:            break;
     }
 
@@ -82,6 +79,7 @@ void App::InitSystems() {
     MoveDatabase::Init();
     PokemonDatabase::Init();
     TrainerDatabase::Init();
+    ItemDatabase::Load(RESOURCE_DIR "/data/items.json");
     srand(static_cast<unsigned int>(time(nullptr)));
     
     m_Renderer = std::make_shared<Util::Renderer>();
@@ -122,10 +120,12 @@ void App::InitGameLoad() {
         }
     } else {
         GameConfig::LootedItems.clear(); 
-        m_Map->LoadLevel(MAP_DIR + "NTUT"); 
-        m_Character->SetGridPosition(14, 53); 
-        m_Map->WarpTo(14, 53);
-        
+        //m_Map->LoadLevel(MAP_DIR + "NTUT"); 
+        //m_Character->SetGridPosition(14, 53); 
+        //m_Map->WarpTo(14, 53);
+        m_Map->LoadLevel(MAP_DIR + "level"); 
+        m_Character->SetGridPosition(14, 10); 
+        m_Map->WarpTo(14, 10);
         auto starter = std::make_shared<Pokemon>(
             "Charmander", 5, PokemonType::FIRE, PokemonType::NONE, 39, 52, 43, 60, 50, 65, 45
         );
@@ -157,6 +157,8 @@ void App::InitUI() {
     
     m_Renderer->AddChild(m_DialogueBoxUI);
     m_Renderer->AddChild(m_DialogueUI);
+    m_ShopMenu = std::make_shared<ShopMenu>(m_Renderer);
+
 }
 
 void App::PerformQuickSave() {
@@ -180,7 +182,7 @@ void App::PerformQuickSave() {
 void App::ProcessDialogueState() {
     if (!Util::Input::IsKeyDown(Util::Keycode::Z)) return;
 
-    // ── Still more lines to show ─────────────────────────────────────────────
+    // Still more lines to show
     if (!m_CurrentDialogueLines.empty() &&
         m_CurrentDialogueIndex < m_CurrentDialogueLines.size() - 1) {
 
@@ -192,7 +194,7 @@ void App::ProcessDialogueState() {
         return;
     }
 
-    // ── Last line confirmed — close dialogue UI ──────────────────────────────
+    // Last line confirmed — close dialogue UI
     m_DialogueBoxUI->SetVisible(false);
     m_DialogueUI->SetVisible(false);
     m_Map->SetPaused(false);
@@ -203,15 +205,20 @@ void App::ProcessDialogueState() {
         return;
     }
 
-    // Unpack NPC data before we clear the pointer
-    const NPCAction action = m_ActiveNPC->GetActionType();
-    const std::string data = m_ActiveNPC->GetActionData();
-    const std::string flag = m_ActiveNPC->GetInteractFlag();
+    // ── Grab EVERYTHING before the pointer goes away ────────────────────────
+    const NPCAction action      = m_ActiveNPC->GetActionType();
+    const std::string data      = m_ActiveNPC->GetActionData();
+    const std::string flag      = m_ActiveNPC->GetInteractFlag();
     const ItemCategory category = m_ActiveNPC->GetActionCategory();
-    auto               npcParty = m_ActiveNPC->GetParty();
+    auto npcParty               = m_ActiveNPC->GetParty();
+
+    // 🔻 NEW: Copy shop items if this is a shop NPC
+    std::vector<ShopItem> shopItems;
+    if (action == NPCAction::SHOP)
+        shopItems = m_ActiveNPC->GetShopItems();
 
     m_ActiveNPC->SetLocked(false);
-    m_ActiveNPC = nullptr;
+    m_ActiveNPC = nullptr;   // safe to clear now
 
     // ── Action dispatch ──────────────────────────────────────────────────────
     switch (action) {
@@ -226,10 +233,19 @@ void App::ProcessDialogueState() {
         }
 
         case NPCAction::SHOP: {
-            // if (!flag.empty()) GameFlags::Set(flag, true);
-            // m_ShopUI->Show(data);
-            // m_CurrentState = State::SHOP;
-            m_CurrentState = State::UPDATE;
+            if (!shopItems.empty()) {
+                m_CurrentShopData.items = shopItems;
+                m_CurrentShopData.shopName = "Shop";
+                auto getProps = [](const std::string& name) -> const ItemProperties& {
+                    return ItemDatabase::GetProperties(name);
+                };
+                m_ShopMenu->LoadBuyItems(m_CurrentShopData.items, getProps);
+                m_ShopMenu->Show(ShopMenu::Mode::BUY, m_Character->GetMoney());   // <-- pass money
+                m_CurrentState = State::SHOP;
+            } else {
+                LOG_WARN("SHOP NPC had no shopItems – shop not opened.");
+                m_CurrentState = State::UPDATE;
+            }
             break;
         }
 
@@ -268,7 +284,6 @@ void App::ProcessDialogueState() {
 
         case NPCAction::NONE:
         default: {
-            // Ambient NPC or sign — no flag, no side effect
             m_CurrentState = State::UPDATE;
             break;
         }
@@ -306,20 +321,20 @@ void App::ProcessStartMenuState() {
         }
 
         case StartMenu::Option::SAVE: {
-            LOG_TRACE("Selected: SAVE");
+            //LOG_TRACE("Selected: SAVE");
             PerformQuickSave();
             CloseAllMenus();   // returns to UPDATE state
             break;
         }
 
         case StartMenu::Option::EXIT: {
-            LOG_TRACE("Selected: EXIT");
+            //LOG_TRACE("Selected: EXIT");
             m_CurrentState = State::END;
             break;
         }
 
         case StartMenu::Option::CANCEL: {
-            LOG_TRACE("StartMenu cancelled");
+            //LOG_TRACE("StartMenu cancelled");
             CloseAllMenus();   // hides everything, goes back to overworld
             break;
         }
@@ -536,6 +551,8 @@ void App::HandleGlobalShortcuts() {
 }
 
 void App::OpenStartMenu() {
+    m_StartMenu->SetPlayerInfo(m_Character->GetMoney(),
+                               static_cast<int>(m_Character->GetParty().size()));
     m_StartMenu->SetVisible(true);
     m_CurrentState = State::START_MENU;
 }
@@ -577,4 +594,69 @@ std::shared_ptr<Pokemon> App::GenerateWildPokemon(const std::string& mapPath) {
         }
     }
     return PokemonDatabase::CreatePokemon("Rattata", 2);
+}
+
+void App::ProcessShopState() {
+    ShopMenu::Result result = m_ShopMenu->Update();
+
+    switch (result) {
+        case ShopMenu::Result::BUY_ITEM: {
+            std::string itemName = m_ShopMenu->GetSelectedItemName();
+            const auto& props = ItemDatabase::GetProperties(itemName);
+
+            auto it = std::find_if(m_CurrentShopData.items.begin(), m_CurrentShopData.items.end(),
+                [&](const ShopItem& si) { return si.itemName == itemName; });
+            int stock = (it != m_CurrentShopData.items.end()) ? it->quantity : -1;
+            if (stock == 0) {
+                LOG_INFO("Item out of stock!");
+                break;
+            }
+
+            if (m_Character->SpendMoney(props.buyPrice)) {
+                m_Character->AddItem(itemName, props.category, 1);
+                if (it != m_CurrentShopData.items.end() && stock > 0) {
+                    it->quantity--;
+                }
+
+                // Refresh buy list with updated money
+                auto getProps = [](const std::string& name) -> const ItemProperties& {
+                    return ItemDatabase::GetProperties(name);
+                };
+                m_ShopMenu->LoadBuyItems(m_CurrentShopData.items, getProps);
+                m_ShopMenu->Show(ShopMenu::Mode::BUY, m_Character->GetMoney());
+            } else {
+                LOG_INFO("Not enough money!");
+                // Optionally show a temporary message; for now just do nothing
+            }
+            break;
+        }
+
+        case ShopMenu::Result::SELL_ITEM: {
+            std::string itemName = m_ShopMenu->GetSelectedItemName();
+            const auto& props = ItemDatabase::GetProperties(itemName);
+            if (m_Character->GetItemCount(itemName) > 0) {
+                m_Character->RemoveItem(itemName, 1);
+                m_Character->AddMoney(props.sellPrice);
+
+                // Refresh sell list with updated money
+                std::map<std::string, int> inv;
+                for (const auto& [name, data] : m_Character->GetInventory())
+                    inv[name] = data.quantity;
+                auto getProps = [](const std::string& name) -> const ItemProperties& {
+                    return ItemDatabase::GetProperties(name);
+                };
+                m_ShopMenu->LoadSellItems(inv, getProps);
+                m_ShopMenu->Show(ShopMenu::Mode::SELL, m_Character->GetMoney());
+            }
+            break;
+        }
+
+        case ShopMenu::Result::BACK: {
+            m_ShopMenu->Hide();
+            m_CurrentState = State::UPDATE;
+            break;
+        }
+
+        default: break;
+    }
 }

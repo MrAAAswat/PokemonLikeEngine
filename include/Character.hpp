@@ -64,6 +64,15 @@ public:
         }
         return false;
     }
+        int  GetMoney() const { return m_Money; }
+    void AddMoney(int amount) { m_Money += amount; }
+    bool SpendMoney(int amount) {
+        if (m_Money >= amount) {
+            m_Money -= amount;
+            return true;
+        }
+        return false;
+    }
 
 protected:
     // The Backpack
@@ -98,6 +107,9 @@ protected:
     std::shared_ptr<Util::Animation> m_AnimRight;
     std::shared_ptr<Util::Animation> m_CurrentAnimation;
     float m_SpeedMultiplier = 1.0f;
+    
+    int m_Money = 3000; 
+
 };
 
 #endif

@@ -543,28 +543,17 @@ bool BattleUI::Update() {
 
             while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
 
-            // ── Inject player animation tag FIRST ─────────────────────────────
-            std::string moveName = m_PlayerPokemon->GetMoves()[m_CursorIndex];
-            auto& moveData = MoveDatabase::GetMove(moveName);
-
-            if (!moveData.animation_key.empty()) {
-                // Format: [ANIM:Move:THUNDERSHOCK:TARGET_ENEMY]
-                m_DialogueQueue.push("[ANIM:" + moveData.animation_key + ":TARGET_ENEMY]");
-            }
-            // ──────────────────────────────────────────────────────────────────
-
-            // Then push the battle result text lines
+            // BattleManager now owns all animation‑tag injection.
+            // The result.message already contains correctly ordered
+            // tags (text → ANIM → SYNC) for the speed‑determined turn.
             std::stringstream ss(result.message);
             std::string line;
             while (std::getline(ss, line, '\n')) {
-                if (!line.empty()) {
-                    m_DialogueQueue.push(line);
-                    LOG_INFO("[BattleUI] Pushing to queue: '{}'", line);
-                }
+                if (!line.empty()) m_DialogueQueue.push(line);
             }
 
             m_UIState       = UIState::WAITING_TEXT;
-            m_TextWaitTimer = 15;
+            m_TextWaitTimer = 0;  // first line is "used" text, no extra delay
             ProcessNextMessage();
         }
 
@@ -588,15 +577,8 @@ bool BattleUI::Update() {
 
   // 2. EMPTY QUEUE CHECK
 if (m_DialogueQueue.empty()) {
-    // ═══════════════════════════════════════════════
-    // FIX 1 – Wait for all visuals to finish
-    // (Faint animation, HP bar still draining, etc.)
-    // ═══════════════════════════════════════════════
-    if (m_Animator->IsBusy()) {
-        // Let the current animation play out before
-        // switching to the next pokémon or ending the battle.
-        return true;
-    }
+    // Wait for all visuals (faint, HP drain) to finish before switching/ending
+    if (m_Animator->IsBusy()) return true;
 
     auto state = m_BattleLogic->GetState();
 
@@ -618,13 +600,6 @@ if (m_DialogueQueue.empty()) {
                 // Reset enemy visual state (position, visibility)
                 m_Animator->ResetState(BattleSide::ENEMY);
 
-                // ═══════════════════════════════════════════════
-                // FIX 2 – AnimateHPDrain now requires a speed.
-                // Since the new pokémon is at full HP, we can
-                // snap the bar by calling with a very high speed.
-                // Alternatively, just set the display percent directly.
-                // I'll use a snap: speed = 1.0f makes it instant.
-                // ═══════════════════════════════════════════════
                 m_Animator->AnimateHPDrain(BattleSide::ENEMY,
                                            1.0f,   // start (full)
                                            1.0f,   // target (full)
@@ -641,16 +616,6 @@ if (m_DialogueQueue.empty()) {
                 m_EnemySprite->SetDrawable(m_EnemyFrame1);
                 m_EnemySprite->SetVisible(true);
 
-                // ═══════════════════════════════════════════════
-                // FIX 3 – Adjust Y position to your layout.
-                // Version 1 uses ENEMY_BASE_Y (likely 150), but
-                // if your intro slide already set it, you may
-                // not need this line. I'll keep it but commented
-                // if it's not needed.
-                // ═══════════════════════════════════════════════
-                // m_EnemySprite->m_Transform.translation.y = ENEMY_BASE_Y;
-
-                // Create a new BattleManager for the fresh enemy
                 m_BattleLogic = std::make_unique<BattleManager>(
                     m_PlayerPokemon, m_EnemyPokemon, true);
                 m_EnemyLevelTextDrawable->SetText(
@@ -693,7 +658,6 @@ if (m_DialogueQueue.empty()) {
         }
     }
     // BATTLE_ESCAPED removed – not present in your current BattleState enum.
-    // If you add it later, you can re‑enable this block.
     else {
         // Normal turn end – return to main menu with fresh cursor
         SetDialogue("What will you do?");
@@ -716,6 +680,12 @@ if (m_DialogueQueue.empty()) {
     if (first != std::string::npos && last != first) {
         std::string animName = nextLine.substr(first + 1, last - first - 1);
         std::string targetStr = nextLine.substr(last + 1, end - last - 1);
+        
+        // ── Transform enemy attack keys to use OppMove prefix ──────────────────
+        if (targetStr == "TARGET_PLAYER" && animName.rfind("Move:", 0) == 0) {
+            animName = "OppMove:" + animName.substr(5);
+        }
+        
         const BattleAnimDef* animDef = AnimationLibrary::Get().Find(animName);
         
         if (animDef) {
@@ -725,7 +695,6 @@ if (m_DialogueQueue.empty()) {
             // ====================================================================
             // LAYOUT & ANCHOR COMPENSATION
             // ====================================================================
-            // Sprite transform origins are at the base — offset upward to body center
             static constexpr float SPRITE_SCALE    = 3.5f;
             static constexpr float SPRITE_HEIGHT   = 64.f;  // typical Pokemon sprite height in pixels
             static constexpr float BODY_CENTER_OFF = (SPRITE_HEIGHT * SPRITE_SCALE) * 0.5f; // ~112px
@@ -739,12 +708,10 @@ if (m_DialogueQueue.empty()) {
                 m_EnemySprite->m_Transform.translation.y + BODY_CENTER_OFF
             };
 
-            // Quick visual calibration check for tracking position: both
             LOG_INFO("Sprite midpoint: ({}, {})", 
                      (playerPos.x + enemyPos.x) * 0.5f, 
                      (playerPos.y + enemyPos.y) * 0.5f);
 
-            // Pass the calculated body-center positions to PlayAttackEffect
             m_Animator->PlayAttackEffect(*animDef, side, playerPos, enemyPos, [this](){ 
                 m_IsMoveAnimating = false;
                 m_TextWaitTimer = 0;          // skip any remaining delay
@@ -767,14 +734,12 @@ if (m_DialogueQueue.empty()) {
             m_Animator->AnimateHPDrain(BattleSide::ENEMY, m_DisplayEnemyHPPercent, targetPercent);
             if (targetHP <= 0) { 
                 m_Animator->PlayFaint(BattleSide::ENEMY); 
-                //m_DialogueQueue.push(m_EnemyPokemon->GetName() + " fainted!");
             }
         } else {
             float targetPercent = targetHP / m_PlayerPokemon->GetMaxHP();
             m_Animator->AnimateHPDrain(BattleSide::PLAYER, m_DisplayPlayerHPPercent, targetPercent);
             if (targetHP <= 0) { 
                 m_Animator->PlayFaint(BattleSide::PLAYER); 
-                //m_DialogueQueue.push(m_PlayerPokemon->GetName() + " fainted!");
             }
         }
         return true; 

@@ -2,12 +2,11 @@
 #include "ResourceManager.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
-#include "Util/Logger.hpp"
 
 StartMenu::StartMenu(std::shared_ptr<Util::Renderer> renderer)
     : m_Renderer(renderer)
 {
-    // 1. Box (unchanged)
+    // Background box
     m_BoxUI = std::make_shared<Util::GameObject>();
     auto boxImg = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/MenuBoxUI2.png");
     m_BoxUI->SetDrawable(boxImg);
@@ -16,10 +15,29 @@ StartMenu::StartMenu(std::shared_ptr<Util::Renderer> renderer)
     m_BoxUI->m_Transform.translation = {BOX_POS_X, BOX_POS_Y};
     m_Renderer->AddChild(m_BoxUI);
 
-    // 2. Text lines – built from m_Items
+    // Player info texts (invisible by default)
+    m_MoneyText = std::make_shared<Util::Text>(
+        RESOURCE_DIR "/Fonts/micross.ttf", 24,
+        "Money: $0", Util::Color(50, 50, 50));
+    m_MoneyTextObj = std::make_shared<Util::GameObject>();
+    m_MoneyTextObj->SetDrawable(m_MoneyText);
+    m_MoneyTextObj->SetZIndex(91.0f);
+    m_MoneyTextObj->SetVisible(false);
+    m_Renderer->AddChild(m_MoneyTextObj);
+
+    m_PartyText = std::make_shared<Util::Text>(
+        RESOURCE_DIR "/Fonts/micross.ttf", 24,
+        "Party: 0/6", Util::Color(50, 50, 50));
+    m_PartyTextObj = std::make_shared<Util::GameObject>();
+    m_PartyTextObj->SetDrawable(m_PartyText);
+    m_PartyTextObj->SetZIndex(91.0f);
+    m_PartyTextObj->SetVisible(false);
+    m_Renderer->AddChild(m_PartyTextObj);
+
+    // Build menu options (text + icons)
     BuildMenuGraphics();
 
-    // 3. Cursor
+    // Cursor
     m_CursorUI = std::make_shared<Util::GameObject>();
     auto cursorImg = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/Cursor.png");
     m_CursorUI->SetDrawable(cursorImg);
@@ -30,40 +48,82 @@ StartMenu::StartMenu(std::shared_ptr<Util::Renderer> renderer)
     SetVisible(false);
 }
 
+// -------------------------------------------------------------------
+// Create / recreate the menu options (icons + text)
+// -------------------------------------------------------------------
 void StartMenu::BuildMenuGraphics() {
-    // remove old text objects
-    for (auto& go : m_ItemTexts)
-        m_Renderer->RemoveChild(go);
+    // Remove old items
+    for (auto& go : m_ItemTexts)   m_Renderer->RemoveChild(go);
+    for (auto& go : m_ItemSprites) m_Renderer->RemoveChild(go);
     m_ItemTexts.clear();
+    m_ItemSprites.clear();
+
+    const float spriteX   = TEXT_LEFT_MARGIN - 30.0f;   // icon sits to the left of text
+    const float textBaseX = TEXT_LEFT_MARGIN;           // text starts here
 
     for (size_t i = 0; i < m_Items.size(); ++i) {
-        auto go = std::make_shared<Util::GameObject>();
+        const auto& item = m_Items[i];
+        float y = OPTION_START_Y - static_cast<float>(i) * LINE_SPACING;
+
+        // Icon (if a path is given)
+        if (!item.iconPath.empty()) {
+            auto spriteObj = std::make_shared<Util::GameObject>();
+            auto img = ResourceManager::GetImageStore().Get(item.iconPath);
+            if (img) {
+                spriteObj->SetDrawable(img);
+                spriteObj->m_Transform.scale = {SPRITE_SCALE, SPRITE_SCALE};
+            }
+            spriteObj->SetZIndex(91.0f);
+            spriteObj->m_Transform.translation = {spriteX, y};
+            m_Renderer->AddChild(spriteObj);
+            m_ItemSprites.push_back(spriteObj);
+        }
+
+        // Text
         auto txt = std::make_shared<Util::Text>(
             RESOURCE_DIR "/Fonts/micross.ttf", 32,
-            m_Items[i].label,
-            Util::Color(50, 50, 50)
-        );
+            item.label, Util::Color(50, 50, 50));
+        auto go = std::make_shared<Util::GameObject>();
         go->SetDrawable(txt);
         go->SetZIndex(91.0f);
-
-        // Get the width of the rendered text
-        float textWidth = txt->GetSize().x;   // assumes GetSize() returns width and height
-        // Left‑align: centre of the text should be at leftMargin + half its width
-        float posX = TEXT_LEFT_MARGIN + textWidth / 2.0f;
-        // Y: keep your original convention (topmost line at TEXT_START_Y, then move
-        //   upward/negatively for each subsequent line; verify this matches your screen axes)
-        float posY = TEXT_START_Y - static_cast<float>(i) * LINE_SPACING;
-
-        go->m_Transform.translation = {posX, posY};
+        float textW = txt->GetSize().x;
+        go->m_Transform.translation = { textBaseX + textW / 2.0f, y };
         m_Renderer->AddChild(go);
         m_ItemTexts.push_back(go);
     }
 }
 
+// -------------------------------------------------------------------
+// Update player info text positions & content
+// -------------------------------------------------------------------
+void StartMenu::BuildInfoDisplay() {
+    // Position the info lines at the top of the menu
+    float yMoney = INFO_START_Y;
+    float yParty = yMoney - INFO_SPACING;
+
+    m_MoneyTextObj->m_Transform.translation = {TEXT_LEFT_MARGIN + 100.0f, yMoney};
+    m_PartyTextObj->m_Transform.translation = {TEXT_LEFT_MARGIN + 100.0f, yParty};
+
+    m_MoneyTextObj->SetVisible(true);
+    m_PartyTextObj->SetVisible(true);
+}
+
+void StartMenu::SetPlayerInfo(int money, int partySize) {
+    m_MoneyText->SetText("Money: $" + std::to_string(money));
+    m_PartyText->SetText("Party: " + std::to_string(partySize) + "/6");
+    BuildInfoDisplay();  // reposition them when shown
+}
+
+// -------------------------------------------------------------------
+// Show / hide
+// -------------------------------------------------------------------
 void StartMenu::SetVisible(bool visible) {
     m_BoxUI->SetVisible(visible);
-    for (auto& go : m_ItemTexts) go->SetVisible(visible);
+    for (auto& go : m_ItemTexts)   go->SetVisible(visible);
+    for (auto& go : m_ItemSprites) go->SetVisible(visible);
     m_CursorUI->SetVisible(visible);
+    m_MoneyTextObj->SetVisible(visible);
+    m_PartyTextObj->SetVisible(visible);
 
     if (visible) {
         m_CursorIndex = 0;
@@ -71,21 +131,19 @@ void StartMenu::SetVisible(bool visible) {
     }
 }
 
+// -------------------------------------------------------------------
+// Input handling
+// -------------------------------------------------------------------
 StartMenu::Option StartMenu::Update() {
     return ProcessInput();
 }
 
 StartMenu::Option StartMenu::ProcessInput() {
-    // 1. Input cooldown (prevents cursor from flying)
     if (m_InputTimer > 0) {
         --m_InputTimer;
-        // Still allow immediate action keys (cancel, select) even during cooldown? 
-        // For safety, only allow them when timer is 0, but you can adjust.
-        // Here we check after cooldown only.
         return Option::NONE;
     }
 
-    // 2. Navigation
     if (Util::Input::IsKeyDown(Util::Keycode::UP) || Util::Input::IsKeyDown(Util::Keycode::W)) {
         m_CursorIndex = (m_CursorIndex - 1 + m_Items.size()) % m_Items.size();
         UpdateCursorPosition();
@@ -97,12 +155,10 @@ StartMenu::Option StartMenu::ProcessInput() {
         m_InputTimer = INPUT_COOLDOWN;
     }
 
-    // 3. Selection
     if (Util::Input::IsKeyDown(Util::Keycode::RETURN) || Util::Input::IsKeyDown(Util::Keycode::Z)) {
         return m_Items[m_CursorIndex].value;
     }
 
-    // 4. Cancel / close menu
     if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE) || Util::Input::IsKeyDown(Util::Keycode::X)) {
         return Option::CANCEL;
     }
@@ -110,11 +166,26 @@ StartMenu::Option StartMenu::ProcessInput() {
     return Option::NONE;
 }
 
+// -------------------------------------------------------------------
+// Cursor movement
+// -------------------------------------------------------------------
 void StartMenu::UpdateCursorPosition() {
     if (m_CursorIndex < 0 || m_CursorIndex >= static_cast<int>(m_ItemTexts.size()))
         return;
 
     float textY = m_ItemTexts[m_CursorIndex]->m_Transform.translation.y;
-    // Place the cursor to the left of the text; adjust vertical fine‑tuning as needed
-    m_CursorUI->m_Transform.translation = {TEXT_LEFT_MARGIN - 20.0f, textY + 5.0f};
+    m_CursorUI->m_Transform.translation = {
+        TEXT_LEFT_MARGIN + CURSOR_OFFSET_X,
+        textY + 5.0f
+    };
+}
+
+// -------------------------------------------------------------------
+// Cleanup (if needed, e.g. when rebuilding)
+// -------------------------------------------------------------------
+void StartMenu::ClearAll() {
+    for (auto& go : m_ItemTexts)   m_Renderer->RemoveChild(go);
+    for (auto& go : m_ItemSprites) m_Renderer->RemoveChild(go);
+    m_ItemTexts.clear();
+    m_ItemSprites.clear();
 }

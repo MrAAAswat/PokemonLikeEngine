@@ -1,6 +1,24 @@
 {
   "items": [
-    { "id": 100, "texture": "PokeBall.png", "name": "Potion",   "category": "GENERAL",   "zIndex": 0.5 },
-    { "id": 101, "texture": "PokeBall.png", "name": "Pokeball", "category": "POKEBALLS", "zIndex": 0.5 }
+    {
+      "id": 100,
+      "texture": "PokeBall.png",
+      "shopTexture": "POTION.png",
+      "name": "Potion",
+      "category": "GENERAL",
+      "zIndex": 0.5,
+      "buyPrice": 200,
+      "sellPrice": 100
+    },
+    {
+      "id": 101,
+      "texture": "PokeBall.png",
+      "shopTexture": "POKEBALL.png",
+      "name": "Pokeball",
+      "category": "POKEBALLS",
+      "zIndex": 0.5,
+      "buyPrice": 300,
+      "sellPrice": 150
+    }
   ]
 }

@@ -21,7 +21,9 @@ set(SRC_FILES
     MapGenerator.cpp
     BattleAnimation.cpp
     AnimationPlayer.cpp
-
+    ShopMenu.cpp
+    ShopData.cpp
+    ItemDatabase.cpp
 
 
 
@@ -53,6 +55,9 @@ set(INCLUDE_FILES
     MapGenerator.hpp
     BattleAnimation.hpp
     AnimationPlayer.hpp
+    ShopMenu.hpp
+    ShopData.hpp
+    ItemDatabase.hpp
 )
 
 set(TEST_FILES

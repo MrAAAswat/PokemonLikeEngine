@@ -22,6 +22,7 @@ int main(int, char**) {
             case App::State::POKEMON_MENU:
             case App::State::INVENTORY_MENU:
             case App::State::BATTLE:
+            case App::State::SHOP:
                 app.Update();
                 break;
 

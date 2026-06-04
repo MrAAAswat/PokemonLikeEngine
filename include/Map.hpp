@@ -10,6 +10,7 @@
 #include "Util/Image.hpp"
 #include "Util/Time.hpp"
 #include "Util/Animation.hpp"
+#include "ShopData.hpp" 
 #include <vector>
 #include <string>
 #include <memory>
@@ -53,6 +54,7 @@ struct NPCProperties {
     bool         dynamicZ;
     NPCAction    actionType   = NPCAction::NONE;
     std::string  actionData   = "";
+    std::vector<ShopItem> shopItems;
     ItemCategory itemCategory = ItemCategory::GENERAL;
     std::string  flagOnInteract;
     std::string  flagToHide;
@@ -69,9 +71,12 @@ struct NPCProperties {
 
 struct ItemProperties {
     std::string  texturePath;
+    std::string  shopTexturePath;
     std::string  name;
     ItemCategory category;
-    float zIndex;
+    float        zIndex;
+    int          buyPrice  = 0;   
+    int          sellPrice = 0;  
 };
 
 class Item;
@@ -107,7 +112,9 @@ public:
     }
     void SetPaused(bool paused) { m_Paused = paused; }
     bool IsPaused()       const { return m_Paused; }
-    
+    static NPCAction    StringToAction  (const std::string& s);
+    static MovementType StringToMovement(const std::string& s);
+    static ItemCategory StringToCategory(const std::string& s);   
 private:
     // --- MAP DATA ---
     std::vector<std::shared_ptr<NPC>> m_NPCs;
@@ -153,9 +160,7 @@ private:
     void LoadPropsFromJSON(const std::string& path);
     void LoadItemsFromJSON(const std::string& path);
     
-    static NPCAction    StringToAction  (const std::string& s);
-    static MovementType StringToMovement(const std::string& s);
-    static ItemCategory StringToCategory(const std::string& s);   
+
 };
 
 #endif // MAP_HPP
