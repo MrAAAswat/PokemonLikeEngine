@@ -1,7 +1,7 @@
 {
   "tiles": [
     { "id": 0,  "texture": "Grass1.png",       "zIndex": 0.0, "yOffset": 0.0, "walkable": true  },
-    { "id": 1,  "texture": "",               "zIndex": 0.0, "yOffset": 0.0, "walkable": false },
+    { "id": 1,  "texture": "",                 "zIndex": 0.0, "yOffset": 0.0, "walkable": false },
     { "id": 2,  "texture": "Dirt1.png",        "zIndex": 0.0, "yOffset": 0.0, "walkable": true  },
     { "id": 4,  "texture": "Concrete.png",     "zIndex": 0.0, "yOffset": 0.0, "walkable": true  },
     { "id": 5,  "texture": "Gravel.png",       "zIndex": 0.1, "yOffset": 0.0, "walkable": true  },
@@ -26,6 +26,8 @@
     { "id": 81, "texture": "wallstone8.png",   "zIndex": 0.1, "yOffset": 0.0, "walkable": false },
     { "id": 82, "texture": "ElevatorTile.png", "zIndex": 0.1, "yOffset": 0.0, "walkable": true  },
     { "id": 83, "texture": "deck.png",         "zIndex": 0.1, "yOffset": 0.0, "walkable": true  },
-    { "id": 99, "texture": "",               "zIndex": 0.0, "yOffset": 0.0, "walkable": true  }
+    { "id": 99, "texture": "caroad.png",       "zIndex": 0.0, "yOffset": 0.0, "walkable": true  },
+    { "id": 300,"texture":"edge.png",          "zIndex": 0.0, "yOffset": 0.0, "walkable": true  }
+    
   ]
 }
