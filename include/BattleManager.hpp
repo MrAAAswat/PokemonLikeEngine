@@ -54,6 +54,14 @@ public:
     TurnResult ExecuteEnemyMove();
     TurnResult ProcessEnemyTurn();
     std::string GetLastEnemyMove() const { return m_LastEnemyMove; }
+    bool IsFinished() const {
+    return m_State == BattleState::BATTLE_WON ||
+           m_State == BattleState::BATTLE_LOST;
+    }
+
+    bool PlayerWon() const {
+        return m_State == BattleState::BATTLE_WON;
+    }
 
 
 

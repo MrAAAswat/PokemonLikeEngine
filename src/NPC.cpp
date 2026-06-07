@@ -116,14 +116,18 @@ std::vector<std::string> NPC::Interact(const Character& player) {
     FaceToward(player.GetGridX(), player.GetGridY());
     SetLocked(true);
 
-    // Check flag-conditional dialogue top-to-bottom — first match wins.
-    // This lets you express NPC story progression by ordering entries
-    // from most-progressed to least (e.g. beat_rival_2 before beat_rival_1).
+    // If the interaction flag is already true and we are a BATTLE NPC → skip the fight
+    if (!m_InteractFlag.empty() && GameFlags::Get(m_InteractFlag)) {
+        if (m_ActionType == NPCAction::BATTLE) {
+            m_ActionType = NPCAction::NONE;   // no battle this time
+        }
+    }
+
+    // Return the first matching conditional dialogue (or default)
     for (const auto& entry : m_ConditionalDialogue) {
         if (!entry.condition.empty() && GameFlags::Get(entry.condition))
             return entry.lines;
     }
-
     return m_DefaultDialogue;
 }
 

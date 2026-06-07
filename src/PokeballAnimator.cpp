@@ -26,7 +26,7 @@ PokeballAnimator::PokeballAnimator(std::shared_ptr<Util::Renderer> renderer) {
         LOG_ERROR("==================================================");
     }
 
-    m_PokeballSprite->m_Transform.scale = {3.5f, 3.5f}; 
+    //m_PokeballSprite->m_Transform.scale = {3.5f, 3.5f}; 
     m_PokeballSprite->SetZIndex(50); 
     
     renderer->AddChild(m_PokeballSprite);

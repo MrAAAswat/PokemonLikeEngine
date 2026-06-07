@@ -270,7 +270,7 @@
     },
         {
       "id": 110,
-      "texture": "Brock",
+      "texture": "Grant",
       "visualOffsetY": -8.0,
       "zIndex": 1.8,
       "dynamicZ": true,
@@ -314,6 +314,73 @@
           "Are you ready to show me your progress"
         ],
         "flags": []
+      }
+    },
+    {
+      "id": 112,
+      "texture": "ShopKeeper",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "SHOP",
+      "actionData": "",
+      "shopItems": [
+        { "itemName": "Potion",   "quantity": -1 },
+        { "itemName": "Pokeball", "quantity": -1 },
+        { "itemName": "Greatball", "quantity": -1 }
+      ],
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0.0,
+        "wanderRadius": 0.0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hi there! Looking to stock up?",
+          "I've got just what you need!"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 113,
+      "texture": "TA0",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "facing": "Right",
+      "actionData": "Test_TA",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "met_ta1",
+      "reward": {
+        "itemName": "Potion",
+        "quantity": 3
+      },
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! You there!",
+          "Think you know your stuff?",
+          "Let's see what you've got — TA battle!"
+        ],
+        "flags": [
+          {
+            "condition": "met_ta1",
+            "lines": [
+              "Not bad last time.",
+              "Keep training and come back stronger!"
+            ]
+          }
+        ]
       }
     }
   ]

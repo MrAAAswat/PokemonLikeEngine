@@ -76,6 +76,10 @@ private:
     std::shared_ptr<InventoryMenu> m_InventoryMenu;
     std::shared_ptr<PokemonMenu> m_PokemonMenu;
     std::shared_ptr<BattleUI> m_BattleUI;
+    
+    std::string m_PendingRewardItem;
+    int         m_PendingRewardQty   = 0;
+    std::string m_PendingBattleFlag;
 
     // ==========================================
     // RESTRUCTURING HELPER FUNCTIONS

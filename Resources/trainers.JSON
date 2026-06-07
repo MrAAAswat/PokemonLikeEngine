@@ -19,6 +19,12 @@
       "party": [
         { "species": "Bulbasaur", "level": 16 }
       ]
+    },
+        "Test_TA": {
+      "name": "Teaching Assistant",
+      "party": [
+        { "species": "Rattata", "level": 2 }
+      ]
     }
   }
 }

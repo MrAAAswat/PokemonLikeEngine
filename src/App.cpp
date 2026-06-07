@@ -179,114 +179,28 @@ void App::PerformQuickSave() {
 // STATE MACHINE EXECUTION FUNCTIONS
 // ==========================================
 
-void App::ProcessDialogueState() {
-    if (!Util::Input::IsKeyDown(Util::Keycode::Z)) return;
+void App::ProcessBattleState() {
+    m_BattleUI->Update();
 
-    // Still more lines to show
-    if (!m_CurrentDialogueLines.empty() &&
-        m_CurrentDialogueIndex < m_CurrentDialogueLines.size() - 1) {
+    if (m_BattleUI->IsBattleOver() || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+        if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) m_BattleUI->Hide();
 
-        m_CurrentDialogueIndex++;
-        m_DialogueText->SetText(m_CurrentDialogueLines[m_CurrentDialogueIndex]);
+        // Give reward if player won and we have a pending one
+        if (m_BattleUI->PlayerWon() && !m_PendingBattleFlag.empty()) {
+            std::string rewardFlag = m_PendingBattleFlag + "_rewarded";
+            if (!GameFlags::Get(rewardFlag) && !m_PendingRewardItem.empty()) {
+                m_Character->AddItem(m_PendingRewardItem, ItemCategory::GENERAL, m_PendingRewardQty);
+                GameFlags::Set(rewardFlag, true);
+                LOG_INFO("Received {} x{} as battle reward.", m_PendingRewardItem, m_PendingRewardQty);
+            }
+        }
+        m_PendingBattleFlag.clear();
+        m_PendingRewardItem.clear();
+        m_PendingRewardQty = 0;
 
-        float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
-        m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
-        return;
-    }
-
-    // Last line confirmed — close dialogue UI
-    m_DialogueBoxUI->SetVisible(false);
-    m_DialogueUI->SetVisible(false);
-    m_Map->SetPaused(false);
-
-    if (!m_ActiveNPC) {
-        // Sign or ground item — no action to process
+        m_Map->SetVisible(true);
+        m_Character->SetVisible(true);
         m_CurrentState = State::UPDATE;
-        return;
-    }
-
-    // ── Grab EVERYTHING before the pointer goes away ────────────────────────
-    const NPCAction action      = m_ActiveNPC->GetActionType();
-    const std::string data      = m_ActiveNPC->GetActionData();
-    const std::string flag      = m_ActiveNPC->GetInteractFlag();
-    const ItemCategory category = m_ActiveNPC->GetActionCategory();
-    auto npcParty               = m_ActiveNPC->GetParty();
-
-    // 🔻 NEW: Copy shop items if this is a shop NPC
-    std::vector<ShopItem> shopItems;
-    if (action == NPCAction::SHOP)
-        shopItems = m_ActiveNPC->GetShopItems();
-
-    m_ActiveNPC->SetLocked(false);
-    m_ActiveNPC = nullptr;   // safe to clear now
-
-    // ── Action dispatch ──────────────────────────────────────────────────────
-    switch (action) {
-
-        case NPCAction::HEAL: {
-            for (auto& pokemon : m_Character->GetParty()) {
-                if (pokemon) pokemon->SetCurrentHP(pokemon->GetMaxHP());
-            }
-            if (!flag.empty()) GameFlags::Set(flag, true);
-            m_CurrentState = State::UPDATE;
-            break;
-        }
-
-        case NPCAction::SHOP: {
-            if (!shopItems.empty()) {
-                m_CurrentShopData.items = shopItems;
-                m_CurrentShopData.shopName = "Shop";
-                auto getProps = [](const std::string& name) -> const ItemProperties& {
-                    return ItemDatabase::GetProperties(name);
-                };
-                m_ShopMenu->LoadBuyItems(m_CurrentShopData.items, getProps);
-                m_ShopMenu->Show(ShopMenu::Mode::BUY, m_Character->GetMoney());   // <-- pass money
-                m_CurrentState = State::SHOP;
-            } else {
-                LOG_WARN("SHOP NPC had no shopItems – shop not opened.");
-                m_CurrentState = State::UPDATE;
-            }
-            break;
-        }
-
-        case NPCAction::GIVE_ITEM: {
-            if (!data.empty()) {
-                m_Character->AddItem(data, category, 1);
-                LOG_INFO("Player received: {} (qty: 1)", data);
-            }
-            if (!flag.empty()) GameFlags::Set(flag, true);
-            m_CurrentState = State::UPDATE;
-            break;
-        }
-
-        case NPCAction::BATTLE: {
-            m_Character->SetVisible(false);
-            m_Map->SetVisible(false);
-            m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npcParty);
-
-            if (!flag.empty()) GameFlags::Set(flag, true);
-            m_CurrentState = State::BATTLE;
-            break;
-        }
-
-        case NPCAction::CHECK_ITEM: {
-            if (!data.empty() && m_Character->GetItemCount(data) > 0) {
-                if (!flag.empty()) {
-                    GameFlags::Set(flag, true);
-                    LOG_INFO("CHECK_ITEM passed: '{}' found, flag '{}' set.", data, flag);
-                }
-            } else {
-                LOG_INFO("CHECK_ITEM failed: player does not have '{}'.", data);
-            }
-            m_CurrentState = State::UPDATE;
-            break;
-        }
-
-        case NPCAction::NONE:
-        default: {
-            m_CurrentState = State::UPDATE;
-            break;
-        }
     }
 }
 
@@ -398,20 +312,6 @@ void App::ProcessOverworldUpdateState() {
     m_Map->SetPlayerGridPosition(m_Character->GetGridX(), m_Character->GetGridY());
 
 }
-
-void App::ProcessBattleState() {
-    m_BattleUI->Update();
-    
-    if (m_BattleUI->IsBattleOver() || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
-        if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
-            m_BattleUI->Hide();
-        }
-        m_Map->SetVisible(true);
-        m_Character->SetVisible(true);
-        m_CurrentState = State::UPDATE;
-    }
-}
-
 // ==========================================
 // OVERWORLD UPDATE DELEGATES
 // ==========================================
@@ -673,5 +573,115 @@ void App::ProcessShopState() {
 
         default:
             break;
+    }
+}
+
+void App::ProcessDialogueState() {
+    if (!Util::Input::IsKeyDown(Util::Keycode::Z)) return;
+
+    // Still more lines to show
+    if (!m_CurrentDialogueLines.empty() &&
+        m_CurrentDialogueIndex < m_CurrentDialogueLines.size() - 1) {
+        m_CurrentDialogueIndex++;
+        m_DialogueText->SetText(m_CurrentDialogueLines[m_CurrentDialogueIndex]);
+        float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
+        m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+        return;
+    }
+
+    // Last line confirmed – close dialogue UI
+    m_DialogueBoxUI->SetVisible(false);
+    m_DialogueUI->SetVisible(false);
+    m_Map->SetPaused(false);
+
+    if (!m_ActiveNPC) {
+        m_CurrentState = State::UPDATE;
+        return;
+    }
+
+    // Grab everything before the pointer goes away
+    const NPCAction action      = m_ActiveNPC->GetActionType();
+    const std::string data      = m_ActiveNPC->GetActionData();
+    const std::string flag      = m_ActiveNPC->GetInteractFlag();
+    const ItemCategory category = m_ActiveNPC->GetActionCategory();
+    auto npcParty               = m_ActiveNPC->GetParty();
+
+    // Grab reward info if this is a BATTLE NPC
+    std::string rewardItem;
+    int rewardQty = 0;
+    if (action == NPCAction::BATTLE) {
+        rewardItem = m_ActiveNPC->GetRewardItemName();
+        rewardQty  = m_ActiveNPC->GetRewardQuantity();
+    }
+
+    std::vector<ShopItem> shopItems;
+    if (action == NPCAction::SHOP)
+        shopItems = m_ActiveNPC->GetShopItems();
+
+    m_ActiveNPC->SetLocked(false);
+    m_ActiveNPC = nullptr;
+
+    switch (action) {
+        case NPCAction::HEAL: {
+            for (auto& pokemon : m_Character->GetParty())
+                if (pokemon) pokemon->SetCurrentHP(pokemon->GetMaxHP());
+            if (!flag.empty()) GameFlags::Set(flag, true);
+            m_CurrentState = State::UPDATE;
+            break;
+        }
+
+        case NPCAction::SHOP: {
+            if (!shopItems.empty()) {
+                m_CurrentShopData.items = shopItems;
+                m_CurrentShopData.shopName = "Shop";
+                auto getProps = [](const std::string& name) -> const ItemProperties& {
+                    return ItemDatabase::GetProperties(name);
+                };
+                m_ShopMenu->LoadBuyItems(m_CurrentShopData.items, getProps);
+                m_ShopMenu->Show(ShopMenu::Mode::BUY, m_Character->GetMoney());
+                m_CurrentState = State::SHOP;
+            } else {
+                LOG_WARN("SHOP NPC had no shopItems – shop not opened.");
+                m_CurrentState = State::UPDATE;
+            }
+            break;
+        }
+
+        case NPCAction::GIVE_ITEM: {
+            if (!data.empty()) {
+                m_Character->AddItem(data, category, 1);
+                LOG_INFO("Player received: {} (qty: 1)", data);
+            }
+            if (!flag.empty()) GameFlags::Set(flag, true);
+            m_CurrentState = State::UPDATE;
+            break;
+        }
+
+        case NPCAction::BATTLE: {
+            m_PendingRewardItem   = rewardItem;
+            m_PendingRewardQty    = rewardQty;
+            m_PendingBattleFlag   = flag;
+
+            m_Character->SetVisible(false);
+            m_Map->SetVisible(false);
+            m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npcParty, flag);
+
+            // Flag is set by BattleUI on victory – do NOT set it here
+            m_CurrentState = State::BATTLE;
+            break;
+        }
+
+        case NPCAction::CHECK_ITEM: {
+            if (!data.empty() && m_Character->GetItemCount(data) > 0) {
+                if (!flag.empty()) GameFlags::Set(flag, true);
+            }
+            m_CurrentState = State::UPDATE;
+            break;
+        }
+
+        default: {
+            m_CurrentState = State::UPDATE;
+            break;
+        }
     }
 }

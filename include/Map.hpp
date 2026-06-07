@@ -67,6 +67,10 @@ struct NPCProperties {
     // Dialogue — default first, then flag-conditional entries in priority order
     std::vector<std::string>      defaultDialogue;
     std::vector<NPCDialogueEntry> conditionalDialogue;
+    struct Reward {
+        std::string itemName;
+        int         quantity = 1;
+    } reward;
 };
 
 struct ItemProperties {

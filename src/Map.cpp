@@ -255,6 +255,10 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         props.itemCategory   = StringToCategory(entry.value("itemCategory", "GENERAL"));
         props.flagOnInteract = entry.value("flagOnInteract","");
         props.flagToHide     = entry.value("flagToHide",    "");
+        if (entry.contains("reward") && entry["reward"].is_object()) {
+            props.reward.itemName = entry["reward"].value("itemName", "");
+            props.reward.quantity = entry["reward"].value("quantity", 1);
+        }
         props.initialFacing = entry.value("facing", "Down");
         // ── Dialogue ────────────────────────────────────────────────────────
         if (entry.contains("dialogue") && entry["dialogue"].is_object()) {
@@ -435,6 +439,7 @@ void Map::SpawnTilesAndProps() {
                 npc->SetZIndex(npcProps.zIndex);
                 npc->SetBaseZIndex(npcProps.zIndex);
                 npc->SetDynamicZ(npcProps.dynamicZ);
+                npc->SetReward(npcProps.reward.itemName, npcProps.reward.quantity);
 
                 // Inline dialogue — no file paths, data comes straight from the registry
                 npc->SetDialogue(npcProps.defaultDialogue, npcProps.conditionalDialogue);
