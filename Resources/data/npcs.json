@@ -391,7 +391,7 @@
       "dynamicZ": true,
       "action": "WARP",
       "facing": "Up",
-      "actionData": "StartTown 7 6",
+      "actionData": "StartTown 16 6",
       "itemCategory": "GENERAL",
       "flagOnInteract": "",
       "movement": {
@@ -407,27 +407,165 @@
         ]
       }
     },
+{
+  "id": 115,
+  "texture": "Sailor",
+  "visualOffsetY": -9.0,
+  "zIndex": 0.8,
+  "dynamicZ": true,
+  "action": "WARP",
+  "facing": "Down",
+  "actionData": "level 16 21",
+  "flagRequired": "chosen_starter",
+  "movement": {
+    "type": "STILL",
+    "moveInterval": 1.8
+  },
+  "dialogue": {
+    "default": [
+      "You don't have a Pokémon yet!",
+      "Come back when you've chosen one."
+    ],
+    "flags": [
+      {
+        "condition": "chosen_starter",
+        "lines": [
+          "Hey! You there!",
+          "Ready to go?"
+        ]
+      }
+    ]
+  }
+},
     {
-      "id": 115,
-      "texture": "Sailor",
-      "visualOffsetY": -9.0,
+      "id": 116,
+      "texture": "Pokeball",
+      "visualOffsetY": -20.0,
       "zIndex": 0.8,
       "dynamicZ": true,
-      "action": "WARP",
-      "facing": "Down",
-      "actionData": "level 16 21",
-      "itemCategory": "GENERAL",
+      "action": "SELECT_STARTER",
+      "actionData": "Bulbasaur",
       "flagOnInteract": "",
+      "flagToHide": "chosen_starter",
       "movement": {
         "type": "STILL",
-        "moveInterval": 1.8,
-        "wanderRadius": 1,
+        "moveInterval": 0,
+        "wanderRadius": 0,
         "patrolPoints": []
       },
       "dialogue": {
         "default": [
-          "Hey! You there!",
-          "Ready to go?"
+          "This is the Grass‑type Pokémon, Bulbasaur!",
+          "Do you want to choose it? (Z = Yes, X = No)"
+        ],
+        "flags": [
+          {
+            "condition": "chosen_starter",
+            "lines": [
+              "It's an empty Pokéball."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 117,
+      "texture": "Pokeball",
+      "visualOffsetY": -20.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "SELECT_STARTER",
+      "actionData": "Charmander",
+      "flagOnInteract": "",
+      "flagToHide": "chosen_starter",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0,
+        "wanderRadius": 0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "This is the Fire‑type Pokémon, Charmander!",
+          "Do you want to choose it? (Z = Yes, X = No)"
+        ],
+        "flags": [
+          {
+            "condition": "chosen_starter",
+            "lines": [
+              "It's an empty Pokéball."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 118,
+      "texture": "PokeBall",
+      "visualOffsetY": -20.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "SELECT_STARTER",
+      "actionData": "Squirtle",
+      "flagOnInteract": "",
+      "flagToHide": "chosen_starter",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0,
+        "wanderRadius": 0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "This is the Water‑type Pokémon, Squirtle!",
+          "Do you want to choose it? (Z = Yes, X = No)"
+        ],
+        "flags": [
+          {
+            "condition": "chosen_starter",
+            "lines": [
+              "It's an empty Pokéball."
+            ]
+          }
+        ]
+      }
+    },
+      {
+      "id": 119,
+      "texture": "Oak",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "GIVE_ITEM",
+      "actionData": "Pokedex",
+      "itemCategory": "KEY_ITEMS",
+      "flagOnInteract": "received_pokedex",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0,
+        "wanderRadius": 0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Welcome to the world of Pokémon!",
+          "Go ahead, choose one of the three Pokéballs on the table."
+        ],
+        "flags": [
+          {
+            "condition": "received_pokedex",
+            "lines": [
+              "Go explore the tall grass outside!",
+              "I'm sure you'll meet many new Pokémon."
+            ]
+          },
+          {
+            "condition": "chosen_starter",
+            "lines": [
+              "Ah, what an excellent partner!",
+              "Here, take this Pokédex to record your journey."
+            ]
+          }
         ]
       }
     }

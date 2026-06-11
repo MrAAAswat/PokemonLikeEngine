@@ -702,6 +702,51 @@ void App::ProcessDialogueState() {
             m_CurrentState = State::UPDATE;
             break;
         }
+        case NPCAction::SELECT_STARTER: {
+            // Only allow picking if they haven't chosen one yet
+            if (!data.empty() && !GameFlags::Get("chosen_starter")) {
+                std::shared_ptr<Pokemon> starter = nullptr;
+
+                // Instantiate the selected Pokemon based on the NPC's action data
+                if (data == "Bulbasaur") {
+                    starter = std::make_shared<Pokemon>("Bulbasaur", 5, PokemonType::GRASS, PokemonType::POISON, 45, 49, 49, 65, 65, 45, 45);
+                    starter->LearnMove("Tackle");
+                    starter->LearnMove("Growl");
+                } 
+                else if (data == "Charmander") {
+                    starter = std::make_shared<Pokemon>("Charmander", 5, PokemonType::FIRE, PokemonType::NONE, 39, 52, 43, 60, 50, 65, 45);
+                    starter->LearnMove("Scratch");
+                    starter->LearnMove("Growl");
+                } 
+                else if (data == "Squirtle") {
+                    starter = std::make_shared<Pokemon>("Squirtle", 5, PokemonType::WATER, PokemonType::NONE, 44, 48, 65, 50, 64, 43, 43);
+                    starter->LearnMove("Tackle");
+                    starter->LearnMove("Tail Whip");
+                }
+
+                if (starter) {
+                    m_Character->AddPokemon(starter);
+                    GameFlags::Set("chosen_starter", true);
+                    LOG_INFO("Player successfully selected starter: {}", data);
+
+                    // Seamlessly display a custom follow-up confirmation box
+                    m_CurrentState = State::DIALOGUE;
+                    m_DialogueBoxUI->SetVisible(true);
+                    m_DialogueUI->SetVisible(true);
+                    
+                    m_CurrentDialogueLines = { "Received " + data + "! Take good care of it!" };
+                    m_CurrentDialogueIndex = 0;
+                    m_DialogueText->SetText(m_CurrentDialogueLines[m_CurrentDialogueIndex]);
+                    
+                    // Recenter dialogue text using your engine's logic
+                    float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
+                    m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+                    return; 
+                }
+            }
+            m_CurrentState = State::UPDATE;
+            break;
+        }
 
         default: {
             m_CurrentState = State::UPDATE;

@@ -116,10 +116,17 @@ std::vector<std::string> NPC::Interact(const Character& player) {
     FaceToward(player.GetGridX(), player.GetGridY());
     SetLocked(true);
 
-    // If the interaction flag is already true and we are a BATTLE NPC → skip the fight
+    // Previous battle-flag check ...
     if (!m_InteractFlag.empty() && GameFlags::Get(m_InteractFlag)) {
         if (m_ActionType == NPCAction::BATTLE) {
-            m_ActionType = NPCAction::NONE;   // no battle this time
+            m_ActionType = NPCAction::NONE;
+        }
+    }
+
+    // NEW: Required flag check – if required flag is not set, suppress actions
+    if (!m_FlagRequired.empty() && !GameFlags::Get(m_FlagRequired)) {
+        if (m_ActionType == NPCAction::WARP) {   // you can extend to other actions later
+            m_ActionType = NPCAction::NONE;
         }
     }
 
@@ -280,13 +287,12 @@ std::vector<std::string> NPC::BuildWalkCycle(const std::string& base) const {
 }
 
 void NPC::LoadSprites() {
-    const auto downFrames  = BuildWalkCycle(m_SpritePath + "_Down");
-    const auto upFrames    = BuildWalkCycle(m_SpritePath + "_Up");
-    const auto leftFrames  = BuildWalkCycle(m_SpritePath + "_Left");
-    const auto rightFrames = BuildWalkCycle(m_SpritePath + "_Right");
+    // --- Build animations for the four cardinal directions ---
+    auto downFrames  = BuildWalkCycle(m_SpritePath + "_Down");
+    auto upFrames    = BuildWalkCycle(m_SpritePath + "_Up");
+    auto leftFrames  = BuildWalkCycle(m_SpritePath + "_Left");
+    auto rightFrames = BuildWalkCycle(m_SpritePath + "_Right");
 
-    // Constructed with play=false — NPCs start idle, Play() is called by
-    // UpdateSprite() only when m_State == MOVING.
     if (!downFrames.empty())
         m_AnimDown  = std::make_shared<Util::Animation>(downFrames,  false, 150, true, 0);
     if (!upFrames.empty())
@@ -296,6 +302,43 @@ void NPC::LoadSprites() {
     if (!rightFrames.empty())
         m_AnimRight = std::make_shared<Util::Animation>(rightFrames, false, 150, true, 0);
 
+    // --- Fallback 1: missing directions copy an existing one ---
+    // Prioritise Down, then Right, then Left, then Up as fallback sources.
+    if (!m_AnimDown && m_AnimUp)    m_AnimDown  = m_AnimUp;
+    if (!m_AnimDown && m_AnimLeft)  m_AnimDown  = m_AnimLeft;
+    if (!m_AnimDown && m_AnimRight) m_AnimDown  = m_AnimRight;
+
+    if (!m_AnimUp)    m_AnimUp    = m_AnimDown;
+    if (!m_AnimLeft)  m_AnimLeft  = (m_AnimRight ? m_AnimRight : m_AnimDown);
+    if (!m_AnimRight) m_AnimRight = (m_AnimLeft  ? m_AnimLeft  : m_AnimDown);
+
+    // --- Fallback 2: if everything is still null, use the "Grant" sprite ---
+    if (!m_AnimDown) {
+        // Extract the directory from the original sprite path
+        std::string dir = m_SpritePath;
+        size_t slash = dir.find_last_of("/\\");
+        if (slash != std::string::npos)
+            dir = dir.substr(0, slash + 1);
+        else
+            dir.clear();
+
+        // Build a full path to the "Grant" sprite
+        std::string fallbackBase = dir + "Grant";
+        LOG_WARN("NPC missing sprites for '{}', falling back to '{}'", m_SpritePath, fallbackBase);
+
+        auto fallbackFrames = BuildWalkCycle(fallbackBase + "_Down"); // just try one direction
+        if (!fallbackFrames.empty()) {
+            m_AnimDown  = std::make_shared<Util::Animation>(fallbackFrames, false, 150, true, 0);
+            m_AnimUp    = m_AnimDown;
+            m_AnimLeft  = m_AnimDown;
+            m_AnimRight = m_AnimDown;
+        } else {
+            LOG_ERROR("FATAL: Could not load fallback sprite '{}' either! NPC will be invisible.",
+                      fallbackBase);
+        }
+    }
+
+    // --- Initial drawable ---
     m_CurrentAnimation = m_AnimDown;
     m_Drawable = m_CurrentAnimation;
 }

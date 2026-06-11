@@ -81,6 +81,9 @@ private:
     int         m_PendingRewardQty   = 0;
     std::string m_PendingBattleFlag;
 
+    bool  m_PendingStarterConfirm = false;
+    std::string m_PendingStarterSpecies;
+
     // ==========================================
     // RESTRUCTURING HELPER FUNCTIONS
     // ==========================================

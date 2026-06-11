@@ -58,6 +58,7 @@ NPCAction Map::StringToAction(const std::string& s) {
     if (s == "BATTLE")     return NPCAction::BATTLE;
     if (s == "CHECK_ITEM") return NPCAction::CHECK_ITEM;
     if (s == "WARP")       return NPCAction::WARP;
+    if (s == "SELECT_STARTER") return NPCAction::SELECT_STARTER;
     if (s != "NONE" && !s.empty())
         LOG_WARN("NPCRegistry: unknown action '{}', defaulting to NONE", s);
     return NPCAction::NONE;
@@ -256,6 +257,7 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         props.itemCategory   = StringToCategory(entry.value("itemCategory", "GENERAL"));
         props.flagOnInteract = entry.value("flagOnInteract","");
         props.flagToHide     = entry.value("flagToHide",    "");
+        props.flagRequired = entry.value("flagRequired", "");
         if (entry.contains("reward") && entry["reward"].is_object()) {
             props.reward.itemName = entry["reward"].value("itemName", "");
             props.reward.quantity = entry["reward"].value("quantity", 1);
@@ -455,6 +457,7 @@ void Map::SpawnTilesAndProps() {
                 npc->SetDialogue(npcProps.defaultDialogue, npcProps.conditionalDialogue);
 
                 npc->SetAction(npcProps.actionType, npcProps.actionData, npcProps.itemCategory);
+                npc->SetRequiredFlag(npcProps.flagRequired);
                 npc->SetShopItems(npcProps.shopItems);
                 if (npcProps.actionType == NPCAction::BATTLE) {
                     auto loadedParty = TrainerDatabase::CreateTrainerParty(npcProps.actionData);

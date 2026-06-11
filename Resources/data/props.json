@@ -882,6 +882,28 @@
       "offsetY": 0.0,
       "animMode": "STATIC",
       "frameDelay": 8
+    },
+    {
+      "id": 300,
+      "textures": ["PlayerHouse.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
+      "id": 301,
+      "textures": ["StartTownLab.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
     }
 ]
 }

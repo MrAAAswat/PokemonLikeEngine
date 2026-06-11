@@ -14,7 +14,7 @@
 // ============================================================
 enum class NPCAction {
     NONE, HEAL, SHOP, GIVE_ITEM, BATTLE, CHECK_ITEM,
-    WARP
+    WARP, SELECT_STARTER
 };
 
 // ============================================================
@@ -91,6 +91,7 @@ public:
     int         GetRewardQuantity()  const { return m_RewardQty; }
 
     bool IsActive() const;
+    void SetRequiredFlag(const std::string& flag) { m_FlagRequired = flag; }
 protected:
     void LoadSprites() override;
 
@@ -105,7 +106,7 @@ private:
     NPCAction    m_ActionType     = NPCAction::NONE;
     std::string  m_ActionData     = "";
     ItemCategory m_ActionCategory = ItemCategory::GENERAL;
-
+    std::string m_FlagRequired;
 
     MovementType m_MovementType = MovementType::STILL;
     bool         m_Locked       = false;
