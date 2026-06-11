@@ -5,6 +5,7 @@ set(SRC_FILES
     Prop.cpp
     Player.cpp
     NPC.cpp
+    Vehicle.cpp
     Item.cpp
     StartMenu.cpp
     InventoryMenu.cpp
@@ -36,8 +37,9 @@ set(INCLUDE_FILES
     Prop.hpp
     Player.hpp
     NPC.hpp
+    Vehicle.hpp
     GameFlags.hpp
-    GameConfif.hpp
+    GameConfig.hpp
     SaveSystem.hpp
     Item.hpp
     StartMenu.hpp

@@ -2,6 +2,7 @@
 #define MAP_HPP
 
 #include "pch.hpp"
+#include "Vehicle.hpp"
 #include "NPC.hpp"
 #include "Character.hpp"
 #include "Item.hpp"
@@ -119,9 +120,12 @@ public:
     static NPCAction    StringToAction  (const std::string& s);
     static MovementType StringToMovement(const std::string& s);
     static ItemCategory StringToCategory(const std::string& s);   
+    float GetWorldOffsetX() const { return m_WorldOffsetX; }
+    float GetWorldOffsetY() const { return m_WorldOffsetY; }
 private:
     // --- MAP DATA ---
     std::vector<std::shared_ptr<NPC>> m_NPCs;
+    std::vector<std::shared_ptr<Vehicle>> m_Vehicles;
     std::vector<std::vector<int>> m_PropData;
     std::vector<std::vector<int>> m_LevelData;
     std::vector<std::shared_ptr<Util::GameObject>> m_Tiles;
@@ -130,6 +134,11 @@ private:
     std::string m_CurrentLevelPath;
     std::weak_ptr<Util::Renderer> m_Renderer;
 
+    float m_WorldOffsetX = 0.0f;
+    float m_WorldOffsetY = 0.0f;
+
+
+    //
     int  m_PlayerGridX = -1;
     int  m_PlayerGridY = -1;
     bool m_Paused      = false;

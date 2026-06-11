@@ -480,8 +480,26 @@ void Map::SpawnTilesAndProps() {
                 continue;  // NPCs are not processed as props/items
             }
 
-            // ── Prop spawning ─────────────────────────────────────────
-            if (m_PropRegistry.count(propID) > 0) {
+            if (propID == GameConfig::PROP_CAR_MOVE) {
+                const PropProperties& props = m_PropRegistry[propID];
+                std::string tex = props.texturePaths.empty() ? "" : props.texturePaths[0];
+
+                auto vehicle = std::make_shared<Vehicle>(
+                    worldX + (props.visualOffsetX * GameConfig::SCALE/3.0f),
+                    worldY + (props.visualOffsetY * GameConfig::SCALE/3.0f),
+                    tex
+                );
+                vehicle->SetGridPosition(x, y);
+                vehicle->SetSpawnPoint(x, y);
+                vehicle->SetResetY(-1);
+                vehicle->SetZIndex(props.zIndex);
+                vehicle->SetBaseZIndex(props.zIndex);
+
+                m_Vehicles.push_back(vehicle);
+                AddToRenderer(vehicle);
+            }
+
+            if (m_PropRegistry.count(propID) > 0 && propID != GameConfig::PROP_CAR_MOVE) {
                 const PropProperties& props = m_PropRegistry[propID];
                 glm::vec2 spawnPos(
                     worldX + (props.visualOffsetX * GameConfig::SCALE/3.0f),
@@ -583,16 +601,30 @@ void Map::Update() {
         if (inView && !m_Paused) prop->Update();
     }
 
-    // ── NPC updates (freeze during dialogue) ─────────────────────────
+    // Vehicle culling
+    for (auto& vehicle : m_Vehicles) {
+        float vx = vehicle->m_Transform.translation.x;
+        float vy = vehicle->m_Transform.translation.y;
+        bool inView = vx > propMinX && vx < propMaxX &&
+                      vy > propMinY && vy < propMaxY;
+        vehicle->SetVisible(inView);
+    }
+ 
+    // NPCs freeze entirely during dialogue — no movement decisions,
+    // no animation advancement, no Z-sort updates.
     if (!m_Paused) {
         for (auto& npc : m_NPCs) npc->Update(shared_from_this());
+        for (auto& vehicle : m_Vehicles) vehicle->Update(shared_from_this());
     }
 }
 
 void Map::Move(float dx, float dy) {
+    m_WorldOffsetX += dx;
+    m_WorldOffsetY += dy;
     for (auto& tile : m_Tiles) { tile->m_Transform.translation.x += dx; tile->m_Transform.translation.y += dy; }
     for (auto& prop : m_Props) { prop->m_Transform.translation.x += dx; prop->m_Transform.translation.y += dy; }
     for (auto& npc  : m_NPCs)  { npc->m_Transform.translation.x  += dx; npc->m_Transform.translation.y  += dy; }
+    for (auto& vehicle : m_Vehicles) { vehicle->m_Transform.translation.x += dx; vehicle->m_Transform.translation.y += dy; }
     for (auto& item : m_Items) { item->m_Transform.translation.x += dx; item->m_Transform.translation.y += dy; }
 }
 
@@ -639,6 +671,13 @@ bool Map::IsWalkable(int x, int y) {
         if (!npc->IsActive()) continue;
         if (npc->GetGridX() == x && npc->GetGridY() == y) {
             //printf("WALK FAILED: Blocked by an active NPC at (%d, %d)!\n", x, y);
+            return false;
+        }
+    }
+
+    // 4b. Vehicles
+    for (const auto& vehicle : m_Vehicles) {
+        if (vehicle->GetGridX() == x && vehicle->GetGridY() == y) {
             return false;
         }
     }
@@ -714,10 +753,13 @@ void Map::AddToRenderer(std::shared_ptr<Util::GameObject> obj) {
 }
 
 void Map::ClearMap() {
+    m_WorldOffsetX = 0.0f;
+    m_WorldOffsetY = 0.0f;
     if (auto r = m_Renderer.lock()) {
         for (auto& tile : m_Tiles) r->RemoveChild(tile);
         for (auto& prop : m_Props) r->RemoveChild(prop);
         for (auto& npc  : m_NPCs)  r->RemoveChild(npc);
+        for (auto& vehicle : m_Vehicles) r->RemoveChild(vehicle);
         for (auto& item : m_Items) r->RemoveChild(item);
     }
     m_Tiles.clear();
@@ -726,6 +768,7 @@ void Map::ClearMap() {
     m_PropData.clear();
     m_Props.clear();
     m_NPCs.clear();
+    m_Vehicles.clear();
     m_Items.clear();
 }
 
@@ -738,6 +781,7 @@ void Map::SetVisible(bool visible) {
     }
     for (auto& prop : m_Props) if (prop) prop->SetVisible(visible);
     for (auto& npc  : m_NPCs)  if (npc)  npc->SetVisible(visible);
+    for (auto& vehicle : m_Vehicles) if (vehicle) vehicle->SetVisible(visible);
     for (auto& item : m_Items) if (item) item->SetVisible(visible);
 }
 

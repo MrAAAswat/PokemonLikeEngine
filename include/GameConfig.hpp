@@ -101,6 +101,7 @@ namespace GameConfig {
     constexpr int PROP_HALLWAY_WALL   = 88;
     constexpr int PROP_BIKE1           = 89;
     constexpr int PROP_BIKE2           = 90;
+    constexpr int PROP_CAR_MOVE        = 204;
     
 
 
