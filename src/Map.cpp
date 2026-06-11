@@ -57,6 +57,7 @@ NPCAction Map::StringToAction(const std::string& s) {
     if (s == "GIVE_ITEM")  return NPCAction::GIVE_ITEM;
     if (s == "BATTLE")     return NPCAction::BATTLE;
     if (s == "CHECK_ITEM") return NPCAction::CHECK_ITEM;
+    if (s == "WARP")       return NPCAction::WARP;
     if (s != "NONE" && !s.empty())
         LOG_WARN("NPCRegistry: unknown action '{}', defaulting to NONE", s);
     return NPCAction::NONE;

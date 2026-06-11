@@ -871,6 +871,17 @@
       "offsetY": 68.0,
       "animMode": "STATIC",
       "frameDelay": 8
+    },
+    {
+      "id": 205,
+      "textures": ["boat.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
     }
 ]
 }

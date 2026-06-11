@@ -382,6 +382,54 @@
           }
         ]
       }
+    },
+    {
+      "id": 114,
+      "texture": "Sailor",
+      "visualOffsetY": -9.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "WARP",
+      "facing": "Up",
+      "actionData": "StartTown 7 6",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! You there!",
+          "Ready to go?"
+        ]
+      }
+    },
+    {
+      "id": 115,
+      "texture": "Sailor",
+      "visualOffsetY": -9.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "WARP",
+      "facing": "Down",
+      "actionData": "Level 16 22",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! You there!",
+          "Ready to go?"
+        ]
+      }
     }
   ]
 }

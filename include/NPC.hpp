@@ -13,7 +13,8 @@
 //  NPCAction — what happens after dialogue closes
 // ============================================================
 enum class NPCAction {
-    NONE, HEAL, SHOP, GIVE_ITEM, BATTLE, CHECK_ITEM
+    NONE, HEAL, SHOP, GIVE_ITEM, BATTLE, CHECK_ITEM,
+    WARP
 };
 
 // ============================================================

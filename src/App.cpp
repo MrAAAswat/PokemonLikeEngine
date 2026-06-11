@@ -678,6 +678,21 @@ void App::ProcessDialogueState() {
             m_CurrentState = State::UPDATE;
             break;
         }
+        case NPCAction::WARP: {
+            if (!data.empty()) {
+                std::istringstream iss(data);
+                std::string mapPath;
+                int tx, ty;
+                if (iss >> mapPath >> tx >> ty) {
+                    // Optional: set a flag if needed (like "warp_used")
+                    m_Map->LoadLevel(MAP_DIR + mapPath);
+                    m_Character->SetGridPosition(tx, ty);
+                    m_Map->WarpTo(tx, ty);
+                }
+            }
+            m_CurrentState = State::UPDATE;
+            break;
+        }
 
         default: {
             m_CurrentState = State::UPDATE;
