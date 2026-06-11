@@ -245,7 +245,7 @@ void NPC::DoPatrol(std::shared_ptr<Map> map) {
 
     if (!TryMoveInDirection(dx, dy, map)) {
         // Temporarily blocked (player / another NPC in path) — wait and retry.
-        DoLookAround();
+        //DoLookAround();
     }
 }
 

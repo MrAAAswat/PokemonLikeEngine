@@ -373,15 +373,23 @@ void Map::LoadConnections(const std::string& filepath) {
 }
 
 void Map::SpawnTilesAndProps() {
+    // ── Prepare water animation ──────────────────────────────────────
     std::vector<std::string> waterPaths = {
         TILE_DIR + "/Water1.png", TILE_DIR + "/Water2.png", TILE_DIR + "/Water3.png",
         TILE_DIR + "/Water4.png", TILE_DIR + "/Water5.png", TILE_DIR + "/Water6.png",
         TILE_DIR + "/Water7.png"
     };
-    m_LeaderWater   = std::make_shared<Util::Animation>(waterPaths, true,  500, true, 0);
-    m_FollowerWater = std::make_shared<Util::Animation>(waterPaths, false, 500, true, 0);
-    bool leaderAssigned = false;
 
+    // The follower is what every water tile will actually draw.
+    m_FollowerWater = std::make_shared<Util::Animation>(waterPaths, false, 500, true, 0);
+
+    // Controller data – completely independent of any tile’s visibility.
+    m_WaterFrameCount = static_cast<int>(waterPaths.size());
+    m_WaterFrameDelay = 500.0f;   // ms between frames
+    m_WaterFrameTimer = 0.0f;
+    m_WaterCurrentFrame = 0;
+
+    // ── Spawn ground tiles ──────────────────────────────────────────
     for (size_t y = 0; y < m_LevelData.size(); y++) {
         for (size_t x = 0; x < m_LevelData[y].size(); x++) {
             int tileID = m_LevelData[y][x];
@@ -395,9 +403,9 @@ void Map::SpawnTilesAndProps() {
             newTile->m_Transform.translation.y = GameConfig::CAMERA_START_Y - (y * GameConfig::EFFECTIVE_TILE_SIZE) + props.yOffset;
             newTile->SetZIndex(props.zIndex);
 
+            // All water tiles share the same follower animation.
             if (tileID == GameConfig::TILE_WATER_SOLID) {
-                if (!leaderAssigned) { newTile->SetDrawable(m_LeaderWater); leaderAssigned = true; }
-                else                 { newTile->SetDrawable(m_FollowerWater); }
+                newTile->SetDrawable(m_FollowerWater);
             } else {
                 newTile->SetDrawable(props.texture);
             }
@@ -409,7 +417,8 @@ void Map::SpawnTilesAndProps() {
     }
 
     if (m_PropData.empty()) return;
-    
+
+    // ── Spawn props, NPCs and items ──────────────────────────────────
     for (size_t y = 0; y < m_PropData.size(); y++) {
         for (size_t x = 0; x < m_PropData[y].size(); x++) {
             int propID = m_PropData[y][x];
@@ -417,7 +426,7 @@ void Map::SpawnTilesAndProps() {
             float worldX = GameConfig::CAMERA_START_X + (x * GameConfig::EFFECTIVE_TILE_SIZE);
             float worldY = GameConfig::CAMERA_START_Y - (y * GameConfig::EFFECTIVE_TILE_SIZE);
 
-            // Inside SpawnTilesAndProps — NPC spawn block (replaces the existing one)
+            // ── NPC spawning ──────────────────────────────────────────
             if (m_NPCRegistry.count(propID) > 0) {
                 const NPCProperties& npcProps = m_NPCRegistry[propID];
 
@@ -441,11 +450,11 @@ void Map::SpawnTilesAndProps() {
                 npc->SetDynamicZ(npcProps.dynamicZ);
                 npc->SetReward(npcProps.reward.itemName, npcProps.reward.quantity);
 
-                // Inline dialogue — no file paths, data comes straight from the registry
+                // Inline dialogue – data comes straight from the registry
                 npc->SetDialogue(npcProps.defaultDialogue, npcProps.conditionalDialogue);
 
                 npc->SetAction(npcProps.actionType, npcProps.actionData, npcProps.itemCategory);
-                npc->SetShopItems(npcProps.shopItems);   // 🔻 This line is crucial!
+                npc->SetShopItems(npcProps.shopItems);
                 if (npcProps.actionType == NPCAction::BATTLE) {
                     auto loadedParty = TrainerDatabase::CreateTrainerParty(npcProps.actionData);
                     for (const auto& p : loadedParty) npc->GetParty().push_back(p);
@@ -468,12 +477,14 @@ void Map::SpawnTilesAndProps() {
 
                 m_NPCs.push_back(npc);
                 AddToRenderer(npc);
+                continue;  // NPCs are not processed as props/items
             }
 
+            // ── Prop spawning ─────────────────────────────────────────
             if (m_PropRegistry.count(propID) > 0) {
                 const PropProperties& props = m_PropRegistry[propID];
                 glm::vec2 spawnPos(
-                    worldX + (props.visualOffsetX * GameConfig::SCALE/3.0f), 
+                    worldX + (props.visualOffsetX * GameConfig::SCALE/3.0f),
                     worldY + (props.visualOffsetY * GameConfig::SCALE/3.0f)
                 );
                 auto prop = std::make_shared<Prop>(
@@ -484,8 +495,10 @@ void Map::SpawnTilesAndProps() {
                 prop->SetAnimMode(props.animMode, props.animFrameDelay);
                 m_Props.push_back(prop);
                 if (!props.texturePaths.empty()) AddToRenderer(prop);
+                continue;
             }
 
+            // ── Item spawning ─────────────────────────────────────────
             if (m_ItemRegistry.count(propID) > 0) {
                 std::string uniqueID = m_CurrentLevelPath + "_" + std::to_string(x) + "_" + std::to_string(y);
                 if (GameConfig::LootedItems.count(uniqueID) > 0) {
@@ -527,18 +540,24 @@ void Map::LoadLevel(const std::string& mapName) {
 }
 
 void Map::Update() {
-    // Water sync — always runs, pause doesn't affect it.
-    // Stopping mid-ripple during dialogue would look wrong.
-    if (m_LeaderWater && m_FollowerWater) {
-        m_FollowerWater->SetCurrentFrame(m_LeaderWater->GetCurrentFrameIndex());
+    // ── Water animation – completely independent of tile visibility ──
+    if (m_FollowerWater && m_WaterFrameCount > 0) {
+        // Fixed delta ≈ 60 FPS. Replace with your actual frame delta if available.
+        const float deltaMs = 16.666f;
+        m_WaterFrameTimer += deltaMs;
+        if (m_WaterFrameTimer >= m_WaterFrameDelay) {
+            m_WaterFrameTimer -= m_WaterFrameDelay;
+            m_WaterCurrentFrame = (m_WaterCurrentFrame + 1) % m_WaterFrameCount;
+            m_FollowerWater->SetCurrentFrame(m_WaterCurrentFrame);
+        }
     }
- 
-    // Tile culling — pure bookkeeping, no visible gameplay effect.
+
+    // ── Tile culling ─────────────────────────────────────────────────
     if (!m_Tiles.empty()) {
         const float margin = GameConfig::EFFECTIVE_TILE_SIZE * 2.0f;
         const float minX = -(HALF_W + margin), maxX = (HALF_W + margin);
         const float minY = -(HALF_H + margin), maxY = (HALF_H + margin);
- 
+
         for (size_t i = 0; i < m_Tiles.size(); i++) {
             float tx = m_Tiles[i]->m_Transform.translation.x;
             float ty = m_Tiles[i]->m_Transform.translation.y;
@@ -549,13 +568,12 @@ void Map::Update() {
             }
         }
     }
- 
-    // Prop culling — visibility always updates, but animation pauses
-    // during dialogue so spinning signs don't advance mid-conversation.
+
+    // ── Prop culling & animation (pauses during dialogue) ────────────
     const float propMargin = GameConfig::EFFECTIVE_TILE_SIZE * 6.0f;
     const float propMinX = -(HALF_W + propMargin), propMaxX = (HALF_W + propMargin);
     const float propMinY = -(HALF_H + propMargin), propMaxY = (HALF_H + propMargin);
- 
+
     for (auto& prop : m_Props) {
         float px = prop->m_Transform.translation.x;
         float py = prop->m_Transform.translation.y;
@@ -564,9 +582,8 @@ void Map::Update() {
         prop->SetVisible(inView);
         if (inView && !m_Paused) prop->Update();
     }
- 
-    // NPCs freeze entirely during dialogue — no movement decisions,
-    // no animation advancement, no Z-sort updates.
+
+    // ── NPC updates (freeze during dialogue) ─────────────────────────
     if (!m_Paused) {
         for (auto& npc : m_NPCs) npc->Update(shared_from_this());
     }

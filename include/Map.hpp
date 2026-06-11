@@ -111,8 +111,8 @@ public:
                             std::vector<std::vector<int>> propData);
 
     void SetPlayerGridPosition(int x, int y) {
-    m_PlayerGridX = x;
-    m_PlayerGridY = y;
+        m_PlayerGridX = x;
+        m_PlayerGridY = y;
     }
     void SetPaused(bool paused) { m_Paused = paused; }
     bool IsPaused()       const { return m_Paused; }
@@ -130,11 +130,10 @@ private:
     std::string m_CurrentLevelPath;
     std::weak_ptr<Util::Renderer> m_Renderer;
 
-
-    //
     int  m_PlayerGridX = -1;
     int  m_PlayerGridY = -1;
     bool m_Paused      = false;
+
     // --- THE REGISTRY ---
     std::unordered_map<int, TileProperties> m_TileRegistry;
     std::unordered_map<int, NPCProperties> m_NPCRegistry;
@@ -148,9 +147,12 @@ private:
     void AddToRenderer(std::shared_ptr<Util::GameObject> obj);
     void SpawnTilesAndProps();
 
-    // --- ANIMATIONS ---
-    std::shared_ptr<Util::Animation> m_LeaderWater;
-    std::shared_ptr<Util::Animation> m_FollowerWater;
+    // --- WATER ANIMATION (independent of tile visibility) ---
+    std::shared_ptr<Util::Animation> m_FollowerWater;   // the actual animation seen on all water tiles
+    int   m_WaterFrameCount   = 0;     // number of frames in the water animation
+    float m_WaterFrameTimer   = 0.0f;  // accumulator (ms)
+    int   m_WaterCurrentFrame = 0;     // which frame the follower should display
+    float m_WaterFrameDelay   = 500.0f; // milliseconds between frames
 
     // --- HELPER FUNCTIONS ---
     std::vector<std::vector<int>> LoadCSV(const std::string& filepath);
@@ -163,8 +165,6 @@ private:
     void LoadTilesFromJSON(const std::string& path);
     void LoadPropsFromJSON(const std::string& path);
     void LoadItemsFromJSON(const std::string& path);
-    
-
 };
 
 #endif // MAP_HPP
