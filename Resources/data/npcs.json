@@ -415,7 +415,7 @@
       "dynamicZ": true,
       "action": "WARP",
       "facing": "Down",
-      "actionData": "Level 16 22",
+      "actionData": "level 16 21",
       "itemCategory": "GENERAL",
       "flagOnInteract": "",
       "movement": {

@@ -380,7 +380,14 @@ void App::HandleOverworldInteraction(int checkX, int checkY) {
 
 void App::HandleOverworldWarping() {
     std::string doorKey = m_Map->GetCurrentLevelPath() + "_" + std::to_string(m_Character->GetGridX()) + "_" + std::to_string(m_Character->GetGridY());
+    LOG_INFO("Door key: {}", doorKey);  // <-- add this
+
     auto it = GameConfig::DoorRouting.find(doorKey);
+    if (it == GameConfig::DoorRouting.end()) {
+        LOG_WARN("No door routing for key: {}", doorKey);
+        m_Character->ClearDoorFlag();
+        return;
+    }
     
     if (it != GameConfig::DoorRouting.end()) {
         GameConfig::WarpDestination dest = it->second;
@@ -399,6 +406,7 @@ void App::HandleOverworldWarping() {
             m_Map->LoadLevel(dest.levelPath); 
             m_Character->SetGridPosition(dest.spawnX, dest.spawnY);
             m_Map->WarpTo(dest.spawnX, dest.spawnY);
+            LOG_INFO("Warped to prop ID: {}", m_Map->GetPropType(dest.spawnX, dest.spawnY));
         }
     }
     m_Character->StopMoving();
@@ -679,17 +687,18 @@ void App::ProcessDialogueState() {
             break;
         }
         case NPCAction::WARP: {
-            if (!data.empty()) {
-                std::istringstream iss(data);
-                std::string mapPath;
-                int tx, ty;
-                if (iss >> mapPath >> tx >> ty) {
-                    // Optional: set a flag if needed (like "warp_used")
-                    m_Map->LoadLevel(MAP_DIR + mapPath);
-                    m_Character->SetGridPosition(tx, ty);
-                    m_Map->WarpTo(tx, ty);
-                }
+            std::istringstream iss(data);
+            std::string mapFile;
+            int wx, wy;
+            if (iss >> mapFile >> wx >> wy) {
+                std::string fullPath = MAP_DIR + mapFile;
+                m_Map->LoadLevel(fullPath);
+                m_Map->LoadConnections(RESOURCE_DIR "/maps/connections.txt"); // ← ADD THIS
+                m_Character->SetGridPosition(wx, wy);
+                m_Map->WarpTo(wx, wy);
             }
+            m_Character->StopMoving();
+            m_Character->ClearDoorFlag();
             m_CurrentState = State::UPDATE;
             break;
         }
