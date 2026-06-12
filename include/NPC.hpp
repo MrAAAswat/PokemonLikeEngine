@@ -87,8 +87,10 @@ public:
         m_RewardItemName = itemName;
         m_RewardQty      = qty;
     }
+    void SetRewardMoney(int money) { m_RewardMoney = money; }
     std::string GetRewardItemName() const { return m_RewardItemName; }
     int         GetRewardQuantity()  const { return m_RewardQty; }
+    int GetRewardMoney() const { return m_RewardMoney; }
 
     bool IsActive() const;
     void SetRequiredFlag(const std::string& flag) { m_FlagRequired = flag; }
@@ -124,6 +126,7 @@ private:
 
     std::string m_RewardItemName;
     int         m_RewardQty = 0;
+    int         m_RewardMoney    = 0;
     std::string m_InteractFlag;
     std::string m_FlagToHide;
 

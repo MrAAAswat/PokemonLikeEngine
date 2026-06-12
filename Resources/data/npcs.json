@@ -356,6 +356,7 @@
       "actionData": "Test_TA",
       "itemCategory": "GENERAL",
       "flagOnInteract": "met_ta1",
+      "rewardMoney": 500,
       "reward": {
         "itemName": "Potion",
         "quantity": 3
