@@ -625,6 +625,36 @@
         ],
         "flags": []
       }
+    },
+    {
+      "id": 122,
+      "texture": "NONE",
+      "visible": false,
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "SHOP",
+      "actionData": "",
+      "shopItems": [
+        { "itemName": "Potion",   "quantity": -1},
+        { "itemName": "Potion1 ", "quantity": -1 }
+
+      ],
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0.0,
+        "wanderRadius": 0.0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Heyy, wanna try some exotic potions?",
+          "Nah don't worry, it won't kill you"
+        ],
+        "flags": []
+      }
     }
   ]
 }

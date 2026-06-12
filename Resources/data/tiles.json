@@ -27,7 +27,9 @@
     { "id": 82, "texture": "ElevatorTile.png", "zIndex": 0.1, "yOffset": 0.0, "walkable": true  },
     { "id": 83, "texture": "deck.png",         "zIndex": 0.1, "yOffset": 0.0, "walkable": true  },
     { "id": 99, "texture": "caroad.png",       "zIndex": 0.0, "yOffset": 0.0, "walkable": true  },
-    { "id": 300,"texture":"edge.png",          "zIndex": 0.0, "yOffset": 0.0, "walkable": true  }
+    { "id": 300,"texture":"edge.png",          "zIndex": 0.0, "yOffset": 0.0, "walkable": true  },
+    { "id": 301,"texture":"sand1.png",          "zIndex": 0.0, "yOffset": 0.0, "walkable": true  },
+    { "id": 302,"texture":"sand2.png",          "zIndex": 0.0, "yOffset": 0.0, "walkable": true  }
     
   ]
 }

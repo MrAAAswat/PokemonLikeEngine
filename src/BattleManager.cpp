@@ -480,6 +480,12 @@ void BattleManager::UseItem(std::shared_ptr<Character> player, const std::string
         m_State = BattleState::EXECUTING_ENEMY_TURN;
         return;
     }
+    if (itemName == "Potion1") {
+        m_PlayerPokemon->Heal(50);
+        LOG_INFO("You used a Potion! %s recovered 50 HP.", m_PlayerPokemon->GetName().c_str());
+        m_State = BattleState::EXECUTING_ENEMY_TURN;
+        return;
+    }
 }
 
 BattleManager::TurnResult BattleManager::ProcessEnemyTurn() {
