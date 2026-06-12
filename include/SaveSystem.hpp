@@ -22,7 +22,8 @@ namespace SaveSystem {
         std::string mapPath;
         int gridX;
         int gridY;
-        int direction; 
+        int direction;
+        int money = 0;  
         std::unordered_map<std::string, InventoryData> inventory;
         std::unordered_set<std::string> lootedItems;
         std::vector<std::shared_ptr<Pokemon>> party; 
@@ -75,6 +76,7 @@ namespace SaveSystem {
         j["gridX"] = state.gridX;
         j["gridY"] = state.gridY;
         j["direction"] = state.direction;
+        j["money"] = state.money;
 
         // 2. Flags
         j["flags"] = json::object();
@@ -144,6 +146,8 @@ namespace SaveSystem {
         outState.gridX = j.value("gridX", 0);
         outState.gridY = j.value("gridY", 0);
         outState.direction = j.value("direction", 0);
+        outState.money = j.value("money", 0);  // ADD THIS
+
 
         // 2. Flags
         if (j.contains("flags")) {

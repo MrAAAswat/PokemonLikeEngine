@@ -260,6 +260,7 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         props.flagToHide     = entry.value("flagToHide",    "");
         props.flagRequired = entry.value("flagRequired", "");
         props.visible      = entry.value("visible",       true);
+        props.rewardMoney  = entry.value("rewardMoney", 0);
         if (entry.contains("reward") && entry["reward"].is_object()) {
             props.reward.itemName = entry["reward"].value("itemName", "");
             props.reward.quantity = entry["reward"].value("quantity", 1);
@@ -455,6 +456,8 @@ void Map::SpawnTilesAndProps() {
                 npc->SetBaseZIndex(npcProps.zIndex);
                 npc->SetDynamicZ(npcProps.dynamicZ);
                 npc->SetReward(npcProps.reward.itemName, npcProps.reward.quantity);
+                npc->SetRewardMoney(npcProps.rewardMoney);
+            
 
                 // Inline dialogue – data comes straight from the registry
                 npc->SetDialogue(npcProps.defaultDialogue, npcProps.conditionalDialogue);

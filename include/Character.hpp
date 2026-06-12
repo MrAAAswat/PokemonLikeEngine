@@ -64,7 +64,9 @@ public:
         }
         return false;
     }
-        int  GetMoney() const { return m_Money; }
+    int  GetMoney() const { return m_Money; }
+    void SetMoney(const int money) {m_Money = money;} 
+    
     void AddMoney(int amount) { m_Money += amount; }
     bool SpendMoney(int amount) {
         if (m_Money >= amount) {

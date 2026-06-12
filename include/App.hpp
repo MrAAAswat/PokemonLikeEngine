@@ -79,6 +79,7 @@ private:
     
     std::string m_PendingRewardItem;
     int         m_PendingRewardQty   = 0;
+    int         m_PendingRewardMoney = 0;
     std::string m_PendingBattleFlag;
 
     bool  m_PendingStarterConfirm = false;

@@ -108,6 +108,7 @@ void App::InitGameLoad() {
     
     if (SaveSystem::LoadGame(loadedState)) {
         GameConfig::LootedItems = loadedState.lootedItems;
+        m_Character->SetMoney(loadedState.money);
         m_Map->LoadLevel(loadedState.mapPath);
         
         m_Character->SetGridPosition(loadedState.gridX, loadedState.gridY);
@@ -123,15 +124,17 @@ void App::InitGameLoad() {
         //m_Map->LoadLevel(MAP_DIR + "NTUT"); 
         //m_Character->SetGridPosition(14, 53); 
         //m_Map->WarpTo(14, 53);
-        m_Map->LoadLevel(MAP_DIR + "level"); 
-        m_Character->SetGridPosition(14, 10); 
-        m_Map->WarpTo(14, 10);
+        m_Map->LoadLevel(MAP_DIR + "StartTown"); 
+        m_Character->SetGridPosition(10, 10); 
+        m_Map->WarpTo(10, 10);
+        /* 
         auto starter = std::make_shared<Pokemon>(
             "Charmander", 5, PokemonType::FIRE, PokemonType::NONE, 39, 52, 43, 60, 50, 65, 45
         );
         starter->LearnMove("Scratch");
         starter->LearnMove("Growl");
         m_Character->AddPokemon(starter);
+        */
     }
 }
 
@@ -163,6 +166,7 @@ void App::InitUI() {
 
 void App::PerformQuickSave() {
     SaveSystem::GameState current;
+    current.money = m_Character->GetMoney();
     current.mapPath = m_Map->GetCurrentLevelPath(); 
     current.gridX = m_Character->GetGridX();
     current.gridY = m_Character->GetGridY();
@@ -185,18 +189,27 @@ void App::ProcessBattleState() {
     if (m_BattleUI->IsBattleOver() || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
         if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) m_BattleUI->Hide();
 
-        // Give reward if player won and we have a pending one
         if (m_BattleUI->PlayerWon() && !m_PendingBattleFlag.empty()) {
             std::string rewardFlag = m_PendingBattleFlag + "_rewarded";
-            if (!GameFlags::Get(rewardFlag) && !m_PendingRewardItem.empty()) {
-                m_Character->AddItem(m_PendingRewardItem, ItemCategory::GENERAL, m_PendingRewardQty);
+            if (!GameFlags::Get(rewardFlag)) {
+                // Give item reward
+                if (!m_PendingRewardItem.empty()) {
+                    m_Character->AddItem(m_PendingRewardItem, ItemCategory::GENERAL, m_PendingRewardQty);
+                    LOG_INFO("Received {} x{} as battle reward.", m_PendingRewardItem, m_PendingRewardQty);
+                }
+                // Give money reward
+                if (m_PendingRewardMoney > 0) {
+                    m_Character->AddMoney(m_PendingRewardMoney);
+                    LOG_INFO("Received ${} as battle reward.", m_PendingRewardMoney);
+                }
                 GameFlags::Set(rewardFlag, true);
-                LOG_INFO("Received {} x{} as battle reward.", m_PendingRewardItem, m_PendingRewardQty);
             }
         }
+
         m_PendingBattleFlag.clear();
         m_PendingRewardItem.clear();
         m_PendingRewardQty = 0;
+        m_PendingRewardMoney = 0; 
 
         m_Map->SetVisible(true);
         m_Character->SetVisible(true);
@@ -617,9 +630,11 @@ void App::ProcessDialogueState() {
     // Grab reward info if this is a BATTLE NPC
     std::string rewardItem;
     int rewardQty = 0;
+    int rewardMoney =0;
     if (action == NPCAction::BATTLE) {
         rewardItem = m_ActiveNPC->GetRewardItemName();
         rewardQty  = m_ActiveNPC->GetRewardQuantity();
+        rewardMoney  = m_ActiveNPC->GetRewardMoney(); 
     }
 
     std::vector<ShopItem> shopItems;
@@ -668,6 +683,7 @@ void App::ProcessDialogueState() {
         case NPCAction::BATTLE: {
             m_PendingRewardItem   = rewardItem;
             m_PendingRewardQty    = rewardQty;
+            m_PendingRewardMoney = rewardMoney;
             m_PendingBattleFlag   = flag;
 
             m_Character->SetVisible(false);
