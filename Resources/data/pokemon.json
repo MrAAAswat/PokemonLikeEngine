@@ -144,6 +144,27 @@
       "sprite": "charizard"
     },
     {
+      "id": 94,
+      "name": "Gengar",
+      "type1": "GHOST",
+      "type2": "POISON",
+      "baseHP": 60,
+      "baseAttack": 65,
+      "baseDefense": 60,
+      "baseSpAtk": 130,
+      "baseSpDef": 75,
+      "baseSpeed": 110,
+      "catchRate": 45,
+      "baseExp": 225,
+      "moves": [
+        { "level": 1, "move": "Lick" },
+        { "level": 1, "move": "Confuse Ray" },
+        { "level": 1, "move": "Night Shade" },
+        { "level": 1, "move": "Hypnosis" }
+      ],
+      "sprite": "gengar"
+    },
+    {
       "id": 7,
       "name": "Squirtle",
       "type1": "WATER",

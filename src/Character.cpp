@@ -23,11 +23,13 @@ void Character::UpdateSprite() {
     }
     m_Drawable = m_CurrentAnimation;
 
-    if (m_State == State::MOVING) {
-        m_CurrentAnimation->Play(); 
-    } else {
-        m_CurrentAnimation->Pause();
-        m_CurrentAnimation->SetCurrentFrame(0); 
+    if (m_CurrentAnimation) {
+        if (m_State == State::MOVING) {
+            m_CurrentAnimation->Play(); 
+        } else {
+            m_CurrentAnimation->Pause();
+            m_CurrentAnimation->SetCurrentFrame(0); 
+        }
     }
 }
 

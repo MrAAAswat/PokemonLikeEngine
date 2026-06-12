@@ -59,6 +59,7 @@ NPCAction Map::StringToAction(const std::string& s) {
     if (s == "CHECK_ITEM") return NPCAction::CHECK_ITEM;
     if (s == "WARP")       return NPCAction::WARP;
     if (s == "SELECT_STARTER") return NPCAction::SELECT_STARTER;
+    if (s == "BUY_POKEMON")    return NPCAction::BUY_POKEMON;
     if (s != "NONE" && !s.empty())
         LOG_WARN("NPCRegistry: unknown action '{}', defaulting to NONE", s);
     return NPCAction::NONE;
@@ -258,6 +259,7 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         props.flagOnInteract = entry.value("flagOnInteract","");
         props.flagToHide     = entry.value("flagToHide",    "");
         props.flagRequired = entry.value("flagRequired", "");
+        props.visible      = entry.value("visible",       true);
         if (entry.contains("reward") && entry["reward"].is_object()) {
             props.reward.itemName = entry["reward"].value("itemName", "");
             props.reward.quantity = entry["reward"].value("quantity", 1);
@@ -435,7 +437,8 @@ void Map::SpawnTilesAndProps() {
 
                 auto npc = std::make_shared<NPC>(
                     worldX, worldY + npcProps.visualOffsetY * GameConfig::SCALE / 3.0f,
-                    npcProps.texturePath
+                    npcProps.texturePath,
+                    npcProps.visible
                 );
 
                 npc->SetGridPosition(x, y);

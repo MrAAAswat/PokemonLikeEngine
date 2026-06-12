@@ -10,12 +10,12 @@
 #include <cmath>     // std::abs()
 #include <algorithm> // std::swap
 
-// ============================================================
 //  Constructor
 // ============================================================
-NPC::NPC(float x, float y, const std::string& spritePath)
+NPC::NPC(float x, float y, const std::string& spritePath, bool visible)
     : Character(x, y)
     , m_SpritePath(spritePath)
+    , m_IsVisibleFromConfig(visible)
 {
     m_Speed = 100.0f;
 
@@ -44,11 +44,12 @@ bool NPC::IsActive() const {
 //  Update
 // ============================================================
 glm::vec2 NPC::Update(std::shared_ptr<Map> map) {
-    if (!IsActive()) {
+    if (!IsActive() || !m_IsVisibleFromConfig) {
         SetVisible(false);
-        return glm::vec2(0.0f, 0.0f);
+        if (!IsActive()) return glm::vec2(0.0f, 0.0f);
+    } else {
+        SetVisible(true);
     }
-    SetVisible(true);
 
     // 1. Always finish any in-progress tile movement first.
     if (m_IsMoving) {
@@ -287,6 +288,9 @@ std::vector<std::string> NPC::BuildWalkCycle(const std::string& base) const {
 }
 
 void NPC::LoadSprites() {
+    if (!m_IsVisibleFromConfig) {
+        return; // Skip loading if specifically marked as invisible
+    }
     // --- Build animations for the four cardinal directions ---
     auto downFrames  = BuildWalkCycle(m_SpritePath + "_Down");
     auto upFrames    = BuildWalkCycle(m_SpritePath + "_Up");

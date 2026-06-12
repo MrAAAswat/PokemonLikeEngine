@@ -14,7 +14,7 @@
 // ============================================================
 enum class NPCAction {
     NONE, HEAL, SHOP, GIVE_ITEM, BATTLE, CHECK_ITEM,
-    WARP, SELECT_STARTER
+    WARP, SELECT_STARTER, BUY_POKEMON
 };
 
 // ============================================================
@@ -37,7 +37,7 @@ struct NPCDialogueEntry {
 // ============================================================
 class NPC : public Character {
 public:
-    NPC(float x, float y, const std::string& spritePath);
+    NPC(float x, float y, const std::string& spritePath, bool visible = true);
 
     glm::vec2 Update(std::shared_ptr<Map> map) override;
 
@@ -92,11 +92,13 @@ public:
 
     bool IsActive() const;
     void SetRequiredFlag(const std::string& flag) { m_FlagRequired = flag; }
+    void SetAlwaysVisible(bool visible) { m_IsVisibleFromConfig = visible; }
 protected:
     void LoadSprites() override;
 
 private:
     std::string m_SpritePath;
+    bool m_IsVisibleFromConfig = true;
     std::vector<ShopItem> m_ShopItems;
 
     std::vector<std::string>      m_DefaultDialogue;

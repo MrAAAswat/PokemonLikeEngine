@@ -568,6 +568,63 @@
           }
         ]
       }
+    },
+    {
+      "id": 120,
+      "texture": "NONE",
+      "visible": false,
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "SHOP",
+      "actionData": "",
+      "shopItems": [
+        { "itemName": "Greatball", "quantity": -1 },
+        { "itemName": "Ultraball", "quantity": -1 },
+        { "itemName": "Masterball","quantity": -1 },
+        { "itemName": "Pokeball", " quantity": -1 }
+      ],
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0.0,
+        "wanderRadius": 0.0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Looking for more powerful Pokeballs?",
+          "If you got the money to pay, I've got just what you need!"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 121,
+      "texture": "NONE",
+      "visible": false,
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BUY_POKEMON",
+      "actionData": "",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0.0,
+        "wanderRadius": 0.0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "I deal in rare and powerful Pokemon.",
+          "Gengar for 3000, or Charizard for 10000.",
+          "But remember, they won't fit in just any ball!"
+        ],
+        "flags": []
+      }
     }
   ]
 }

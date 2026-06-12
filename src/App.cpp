@@ -748,6 +748,90 @@ void App::ProcessDialogueState() {
             break;
         }
 
+        case NPCAction::BUY_POKEMON: {
+            std::vector<std::string> feedback;
+            std::string species = "Gengar";
+            int price = 3000;
+            std::string minBall = "Greatball";
+
+            // Sequential logic: if you have Gengar, offer Charizard
+            bool hasGengar = false;
+            bool hasCharizard = false;
+            for (auto& p : m_Character->GetParty()) {
+                if (p) {
+                    if (p->GetName() == "Gengar") hasGengar = true;
+                    if (p->GetName() == "Charizard") hasCharizard = true;
+                }
+            }
+
+            if (!hasGengar) {
+                species = "Gengar";
+                price = 3000;
+                minBall = "Greatball";
+            } else if (!hasCharizard) {
+                species = "Charizard";
+                price = 10000;
+                minBall = "Masterball";
+            } else {
+                feedback = { "I have no more powerful Pokemon to sell." };
+                goto show_feedback;
+            }
+
+            {
+                auto getBallRank = [](const std::string& name) {
+                    if (name == "Pokeball") return 1;
+                    if (name == "Greatball") return 2;
+                    if (name == "Ultraball") return 3;
+                    if (name == "Masterball") return 4;
+                    return 0;
+                };
+
+                int requiredRank = getBallRank(minBall);
+                std::string bestBall = "";
+                int bestRank = 100; // Find lowest valid ball to consume
+
+                for (const auto& pair : m_Character->GetInventory()) {
+                    const std::string& name = pair.first;
+                    const auto& inv = pair.second;
+                    if (inv.category == ItemCategory::POKEBALLS) {
+                        int r = getBallRank(name);
+                        if (r >= requiredRank && r < bestRank) {
+                            bestRank = r;
+                            bestBall = name;
+                        }
+                    }
+                }
+
+                if (bestBall.empty()) {
+                    feedback = { "Go get the right ball!", "That " + species + " won't fit in what you have." };
+                } else if (m_Character->GetMoney() < price) {
+                    feedback = { "You don't have enough money!", "That " + species + " costs " + std::to_string(price) + "." };
+                } else {
+                    m_Character->SpendMoney(price);
+                    m_Character->RemoveItem(bestBall, 1);
+                    auto pkmn = PokemonDatabase::CreatePokemon(species, 50);
+                    if (m_Character->AddPokemon(pkmn)) {
+                        feedback = { "Transaction complete!", "Received " + species + "! It was placed in your party." };
+                    } else {
+                        feedback = { "Your party is full! Come back later." };
+                        m_Character->AddMoney(price);
+                        m_Character->AddItem(bestBall, ItemCategory::POKEBALLS, 1);
+                    }
+                }
+            }
+
+        show_feedback:
+            m_CurrentState = State::DIALOGUE;
+            m_DialogueBoxUI->SetVisible(true);
+            m_DialogueUI->SetVisible(true);
+            m_CurrentDialogueLines = feedback;
+            m_CurrentDialogueIndex = 0;
+            m_DialogueText->SetText(m_CurrentDialogueLines[0]);
+            float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
+            m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+            break;
+        }
+
         default: {
             m_CurrentState = State::UPDATE;
             break;

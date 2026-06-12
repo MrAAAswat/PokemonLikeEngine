@@ -60,6 +60,7 @@ struct NPCProperties {
     std::string  flagOnInteract;
     std::string  flagToHide;
     std::string  flagRequired;
+    bool         visible = true;
     std::string initialFacing = "Down";
     MovementType             movementType = MovementType::STILL;
     float                    moveInterval = 2.0f;

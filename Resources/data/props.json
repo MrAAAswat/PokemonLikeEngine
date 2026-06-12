@@ -904,6 +904,72 @@
       "offsetY": 0.0,
       "animMode": "STATIC",
       "frameDelay": 8
+    },
+    {
+      "id": 302,
+      "textures": ["ntutbuild10.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
+      "id": 303,
+      "textures": ["ntutbuild11.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
+      "id": 304,
+      "textures": ["market1.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
+      "id": 305,
+      "textures": ["market2.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
+      "id": 306,
+      "textures": ["market3.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
+      "id": 307,
+      "textures": ["market4.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
     }
 ]
 }
