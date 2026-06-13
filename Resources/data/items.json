@@ -2,7 +2,7 @@
   "items": [
     {
       "id": 50,
-      "texture": "PokeBall.png",
+      "texture": "POTION.png",
       "shopTexture": "POTION.png",
       "name": "Potion",
       "category": "GENERAL",
@@ -49,6 +49,16 @@
   "zIndex": 0.5,
   "buyPrice": 5000,
   "sellPrice": 2500
+},
+{
+  "id": 253,
+  "texture": "PokeBall.png",
+  "shopTexture": "SUPERPOTION.png",
+  "name": "Potion1",
+  "category": "GENERAL",
+  "zIndex": 0.5,
+  "buyPrice": 1500,
+  "sellPrice": 800
 }
   ]
 }
