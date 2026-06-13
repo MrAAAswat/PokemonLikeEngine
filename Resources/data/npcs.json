@@ -653,6 +653,142 @@
         ],
         "flags": []
       }
+    },
+        {
+      "id": 123,
+      "texture": "Bed",
+      "visualOffsetY": -48.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "HEAL",
+      "actionData": "",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0.0,
+        "wanderRadius": 0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Feeling tired",
+          "Let's rest"
+        ],
+        "flags": []
+      }
+    },
+  {
+      "id": 124,
+      "texture": "Grunt",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "Grunt1",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "fight_grunt",
+      "flagToHide": "fight_grunt",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! You there!",
+          "Stop staring at me!?"
+        ],
+        "flags": [
+          {
+            "condition": "fight_grunt",
+            "lines": [
+              "Hmm you're pretty strong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 125,
+      "texture": "BaldingGuy",
+      "visualOffsetY": -8.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "NONE",
+      "actionData": "",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "WANDER",
+        "moveInterval": 3.5,
+        "wanderRadius": 2,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! You're visiting our town?",
+          "Have fun!"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 126,
+      "texture": "Student1",
+      "visualOffsetY": -8.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "NONE",
+      "actionData": "",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "WANDER",
+        "moveInterval": 4.5,
+        "wanderRadius": 2,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! You're visiting our town?",
+          "Have fun!"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 127,
+      "texture": "Grunt",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "Grunt2",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "fight_grunt2",
+      "flagToHide": "fight_grunt2",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! You there!",
+          "Stop staring at me!?"
+        ],
+        "flags": [
+          {
+            "condition": "fight_grunt",
+            "lines": [
+              "Hmm you're pretty strong"
+            ]
+          }
+        ]
+      }
     }
   ]
 }

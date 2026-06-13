@@ -25,6 +25,18 @@
       "party": [
         { "species": "Rattata", "level": 2 }
       ]
+    },
+        "Grunt1": {
+      "name": "Grunt",
+      "party": [
+        { "species": "Rattata", "level": 3 }
+      ]
+    },
+            "Grunt2": {
+      "name": "Grunt",
+      "party": [
+        { "species": "Voltorb", "level": 5 }
+      ]
     }
   }
 }

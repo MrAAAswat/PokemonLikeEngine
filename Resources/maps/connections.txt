@@ -38,9 +38,16 @@ level    47  7   ->  maze     2   15
 maze     2   15  ->  level    47  8
 
 // Wooden House
-level    39  12  ->  wood     7   9
-wood     7   9   ->  level    39  12
+level    39  12  ->  wood     2   9
+wood     2   9   ->  level    39  12
+wood     7   1   ->  woodB1    5  8
+woodB1    5  8   ->  wood     7   1
+
 
 //StartTown
 StartTown   21  12  -> StartLab  4 12
+StartTown   9  11  -> PlayerHouse  3 8
+PlayerHouse  3 8 -> StartTown   9  11
+PlayerHouse  10 1 -> PlayerHouse2F  11  1  
+PlayerHouse2F  11 1 -> PlayerHouse  10  1  
 StartLab  4 11  -> StartTown   21  12

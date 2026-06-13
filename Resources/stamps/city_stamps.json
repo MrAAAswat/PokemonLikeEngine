@@ -141,6 +141,39 @@
       "props": [
         [103]
       ]
+    },
+        {
+      "name": "Goldtent", "weight": 10, "width": 5, "height": 4,
+      "ground": [
+        [ 0,  0,  0],
+        [ 0,  0,  0]
+      ],
+      "props": [
+        [999,304,999],
+        [999, -1,999]
+      ]
+    },
+        {
+      "name": "PotionTent", "weight": 10, "width": 5, "height": 4,
+      "ground": [
+        [ 0,  0,  0],
+        [ 0,  0,  0]
+      ],
+      "props": [
+        [999,307,999],
+        [999,122,999]
+      ]
+    },
+        {
+      "name": "PokemonTent", "weight": 10, "width": 5, "height": 4,
+      "ground": [
+        [ 0,  0,  0],
+        [ 0,  0,  0]
+      ],
+      "props": [
+        [999,306,999],
+        [999,120,999]
+      ]
     }
   ]
 }
