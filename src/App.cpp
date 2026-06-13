@@ -19,7 +19,6 @@
 #include "BattleAnimation.hpp"
 #include "ItemDatabase.hpp"
 
-
 const std::string RES      = std::string(RESOURCE_DIR);
 const std::string MAP_DIR  = RES + "/maps/";
 
@@ -52,15 +51,15 @@ void App::Update() {
 
     // Main State Machine routing
     switch (m_CurrentState) {
-        case State::START:          break;
-        case State::DIALOGUE:       ProcessDialogueState();       break;
-        case State::START_MENU:     ProcessStartMenuState();      break;
-        case State::INVENTORY_MENU: m_InventoryMenu->Update();    break;
-        case State::POKEMON_MENU:   ProcessPokemonMenuState();    break;
-        case State::UPDATE:         ProcessOverworldUpdateState(); break;
-        case State::BATTLE:         ProcessBattleState();         break;
-        case State::SHOP:           ProcessShopState(); break;
-        case State::END:            break;
+        case State::START:            break;
+        case State::DIALOGUE:         ProcessDialogueState();       break;
+        case State::START_MENU:       ProcessStartMenuState();      break;
+        case State::INVENTORY_MENU:   m_InventoryMenu->Update();    break;
+        case State::POKEMON_MENU:     ProcessPokemonMenuState();    break;
+        case State::UPDATE:           ProcessOverworldUpdateState(); break;
+        case State::BATTLE:           ProcessBattleState();         break;
+        case State::SHOP:             ProcessShopState();           break;
+        case State::END:              break;
     }
 
     m_Map->Update();
@@ -121,20 +120,10 @@ void App::InitGameLoad() {
         }
     } else {
         GameConfig::LootedItems.clear(); 
-        //m_Map->LoadLevel(MAP_DIR + "NTUT"); 
-        //m_Character->SetGridPosition(14, 53); 
-        //m_Map->WarpTo(14, 53);
         m_Map->LoadLevel(MAP_DIR + "StartTown"); 
         m_Character->SetGridPosition(10, 10); 
         m_Map->WarpTo(10, 10);
-        /* 
-        auto starter = std::make_shared<Pokemon>(
-            "Charmander", 5, PokemonType::FIRE, PokemonType::NONE, 39, 52, 43, 60, 50, 65, 45
-        );
-        starter->LearnMove("Scratch");
-        starter->LearnMove("Growl");
-        m_Character->AddPokemon(starter);
-        */
+        // Starter will be chosen via NPC interaction – no hardcoded Pokémon
     }
 }
 
@@ -161,7 +150,6 @@ void App::InitUI() {
     m_Renderer->AddChild(m_DialogueBoxUI);
     m_Renderer->AddChild(m_DialogueUI);
     m_ShopMenu = std::make_shared<ShopMenu>(m_Renderer);
-
 }
 
 void App::PerformQuickSave() {
@@ -192,12 +180,10 @@ void App::ProcessBattleState() {
         if (m_BattleUI->PlayerWon() && !m_PendingBattleFlag.empty()) {
             std::string rewardFlag = m_PendingBattleFlag + "_rewarded";
             if (!GameFlags::Get(rewardFlag)) {
-                // Give item reward
                 if (!m_PendingRewardItem.empty()) {
                     m_Character->AddItem(m_PendingRewardItem, ItemCategory::GENERAL, m_PendingRewardQty);
                     LOG_INFO("Received {} x{} as battle reward.", m_PendingRewardItem, m_PendingRewardQty);
                 }
-                // Give money reward
                 if (m_PendingRewardMoney > 0) {
                     m_Character->AddMoney(m_PendingRewardMoney);
                     LOG_INFO("Received ${} as battle reward.", m_PendingRewardMoney);
@@ -209,7 +195,7 @@ void App::ProcessBattleState() {
         m_PendingBattleFlag.clear();
         m_PendingRewardItem.clear();
         m_PendingRewardQty = 0;
-        m_PendingRewardMoney = 0; 
+        m_PendingRewardMoney = 0;
 
         m_Map->SetVisible(true);
         m_Character->SetVisible(true);
@@ -234,7 +220,6 @@ void App::ProcessStartMenuState() {
             m_CurrentState = State::INVENTORY_MENU;
             m_StartMenu->SetVisible(false);
 
-            // Prepare inventory sorted by category
             std::map<ItemCategory, std::vector<std::pair<std::string, int>>> sorted;
             sorted[ItemCategory::GENERAL]    = {};
             sorted[ItemCategory::POKEBALLS]  = {};
@@ -248,32 +233,48 @@ void App::ProcessStartMenuState() {
         }
 
         case StartMenu::Option::SAVE: {
-            //LOG_TRACE("Selected: SAVE");
             PerformQuickSave();
-            CloseAllMenus();   // returns to UPDATE state
+            CloseAllMenus();
             break;
         }
 
         case StartMenu::Option::EXIT: {
-            //LOG_TRACE("Selected: EXIT");
             m_CurrentState = State::END;
             break;
         }
 
         case StartMenu::Option::CANCEL: {
-            //LOG_TRACE("StartMenu cancelled");
-            CloseAllMenus();   // hides everything, goes back to overworld
+            CloseAllMenus();
             break;
         }
 
         case StartMenu::Option::NONE:
         default:
-            break; // no action selected this frame
+            break;
     }
 }
 
 void App::ProcessPokemonMenuState() {
     if (m_PokemonMenu->Update()) {
+        
+        // 1. If we are currently looking at a Preview, exiting returns us to the Grid List
+        if (m_PokemonMenu->GetMode() == PokemonMenu::Mode::PREVIEW) {
+            m_PokemonMenu->Show(m_Character->GetParty());
+            return;
+        }
+
+        // 2. If we pressed 'Z' while hovering over a Pokemon in the Grid List, show the Preview
+        if (m_PokemonMenu->IsActionSelected()) {
+            int selectedIdx = m_PokemonMenu->GetSelectedIndex();
+            auto party = m_Character->GetParty();
+            if (selectedIdx >= 0 && selectedIdx < party.size() && party[selectedIdx]) {
+                LOG_TRACE("Opening preview for index %d.", selectedIdx);
+                m_PokemonMenu->ShowPreview(*party[selectedIdx]);
+            }
+            return;
+        }
+
+        // 3. Otherwise (Pressed 'X'), Exit the Pokemon menu and go back to Start Menu
         LOG_TRACE("Exited POKEMON menu");
         m_PokemonMenu->Hide();
         m_StartMenu->SetVisible(true);
@@ -281,21 +282,7 @@ void App::ProcessPokemonMenuState() {
         m_SwapIndex = -1; 
         return;
     }
-
-    if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
-        int selectedIdx = m_PokemonMenu->GetSelectedIndex();
-        if (m_SwapIndex == -1) {
-            m_SwapIndex = selectedIdx; 
-            LOG_TRACE("Selected Pokemon at index %d to swap.", m_SwapIndex);
-        } else {
-            LOG_TRACE("Swapping index %d with index %d.", m_SwapIndex, selectedIdx);
-            m_Character->SwapPokemon(m_SwapIndex, selectedIdx);
-            m_SwapIndex = -1; 
-            m_PokemonMenu->Show(m_Character->GetParty()); 
-        }
-    }
 }
-
 void App::ProcessOverworldUpdateState() {
     // A. INTERACTION
     if (Util::Input::IsKeyDown(Util::Keycode::Z) && !m_Character->IsMoving()) {
@@ -323,8 +310,8 @@ void App::ProcessOverworldUpdateState() {
     // D. RANDOM ENCOUNTERS
     HandleOverworldEncounters();
     m_Map->SetPlayerGridPosition(m_Character->GetGridX(), m_Character->GetGridY());
-
 }
+
 // ==========================================
 // OVERWORLD UPDATE DELEGATES
 // ==========================================
@@ -349,31 +336,27 @@ void App::HandleOverworldInteraction(int checkX, int checkY) {
     }
 
     if (targetNPC) {
-    m_ActiveNPC = targetNPC;
-    m_Character->StopMoving();
-    m_CurrentState = State::DIALOGUE; 
-    m_DialogueBoxUI->SetVisible(true);
-    m_DialogueUI->SetVisible(true);
+        m_ActiveNPC = targetNPC;
+        m_Character->StopMoving();
+        m_CurrentState = State::DIALOGUE; 
+        m_DialogueBoxUI->SetVisible(true);
+        m_DialogueUI->SetVisible(true);
 
-    Character::Direction playerDir = m_Character->GetFacingDirection();
-    if (playerDir == Character::Direction::UP)         targetNPC->SetDirection(Character::Direction::DOWN);
-    else if (playerDir == Character::Direction::DOWN)  targetNPC->SetDirection(Character::Direction::UP);
-    else if (playerDir == Character::Direction::LEFT)  targetNPC->SetDirection(Character::Direction::RIGHT);
-    else if (playerDir == Character::Direction::RIGHT) targetNPC->SetDirection(Character::Direction::LEFT);
+        Character::Direction playerDir = m_Character->GetFacingDirection();
+        if (playerDir == Character::Direction::UP)         targetNPC->SetDirection(Character::Direction::DOWN);
+        else if (playerDir == Character::Direction::DOWN)  targetNPC->SetDirection(Character::Direction::UP);
+        else if (playerDir == Character::Direction::LEFT)  targetNPC->SetDirection(Character::Direction::RIGHT);
+        else if (playerDir == Character::Direction::RIGHT) targetNPC->SetDirection(Character::Direction::LEFT);
 
-    // ─── UPDATE THIS LINE ───────────────────────────────────────────
-    // Dereference m_Character so the NPC can read the player's inventory
-    m_CurrentDialogueLines = targetNPC->Interact(*m_Character);
-    // ────────────────────────────────────────────────────────────────
-    
-    m_CurrentDialogueIndex = 0; 
+        m_CurrentDialogueLines = targetNPC->Interact(*m_Character);
+        m_CurrentDialogueIndex = 0; 
 
-    if (!m_CurrentDialogueLines.empty()) {
-        m_DialogueText->SetText(m_CurrentDialogueLines[m_CurrentDialogueIndex]);
-        float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
-        m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+        if (!m_CurrentDialogueLines.empty()) {
+            m_DialogueText->SetText(m_CurrentDialogueLines[m_CurrentDialogueIndex]);
+            float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
+            m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+        }
     }
-}
     else {
         std::string collectedItem = m_Map->CollectItemAt(checkX, checkY, *m_Character);
         if (!collectedItem.empty()) {
@@ -393,7 +376,7 @@ void App::HandleOverworldInteraction(int checkX, int checkY) {
 
 void App::HandleOverworldWarping() {
     std::string doorKey = m_Map->GetCurrentLevelPath() + "_" + std::to_string(m_Character->GetGridX()) + "_" + std::to_string(m_Character->GetGridY());
-    LOG_INFO("Door key: {}", doorKey);  // <-- add this
+    LOG_INFO("Door key: {}", doorKey);
 
     auto it = GameConfig::DoorRouting.find(doorKey);
     if (it == GameConfig::DoorRouting.end()) {
@@ -402,25 +385,23 @@ void App::HandleOverworldWarping() {
         return;
     }
     
-    if (it != GameConfig::DoorRouting.end()) {
-        GameConfig::WarpDestination dest = it->second;
+    GameConfig::WarpDestination dest = it->second;
+    
+    if (dest.levelPath.find("GENERATED_CAVE") != std::string::npos) {
+        auto generated = MapGenerator::GenerateCave(40, 40);
+        std::string exitKey = "GENERATED_CAVE_" + std::to_string(generated.spawnX) + "_" + std::to_string(generated.spawnY);
         
-        if (dest.levelPath.find("GENERATED_CAVE") != std::string::npos) {
-            auto generated = MapGenerator::GenerateCave(40, 40);
-            std::string exitKey = "GENERATED_CAVE_" + std::to_string(generated.spawnX) + "_" + std::to_string(generated.spawnY);
-            
-            GameConfig::DoorRouting[exitKey] = { m_Map->GetCurrentLevelPath(), m_Character->GetGridX(), m_Character->GetGridY() };
-            
-            m_Map->LoadGeneratedLevel("GENERATED_CAVE", generated.ground, generated.props);
-            m_Character->SetGridPosition(generated.spawnX, generated.spawnY);
-            m_Map->WarpTo(generated.spawnX, generated.spawnY);
-        } 
-        else {
-            m_Map->LoadLevel(dest.levelPath); 
-            m_Character->SetGridPosition(dest.spawnX, dest.spawnY);
-            m_Map->WarpTo(dest.spawnX, dest.spawnY);
-            LOG_INFO("Warped to prop ID: {}", m_Map->GetPropType(dest.spawnX, dest.spawnY));
-        }
+        GameConfig::DoorRouting[exitKey] = { m_Map->GetCurrentLevelPath(), m_Character->GetGridX(), m_Character->GetGridY() };
+        
+        m_Map->LoadGeneratedLevel("GENERATED_CAVE", generated.ground, generated.props);
+        m_Character->SetGridPosition(generated.spawnX, generated.spawnY);
+        m_Map->WarpTo(generated.spawnX, generated.spawnY);
+    } 
+    else {
+        m_Map->LoadLevel(dest.levelPath); 
+        m_Character->SetGridPosition(dest.spawnX, dest.spawnY);
+        m_Map->WarpTo(dest.spawnX, dest.spawnY);
+        LOG_INFO("Warped to prop ID: {}", m_Map->GetPropType(dest.spawnX, dest.spawnY));
     }
     m_Character->StopMoving();
     m_Character->ClearDoorFlag(); 
@@ -455,7 +436,6 @@ void App::HandleOverworldEncounters() {
 // ==========================================
 
 void App::HandleGlobalShortcuts() {
-    // Toggle start menu
     if (Util::Input::IsKeyDown(Util::Keycode::I)) {
         if (m_CurrentState == State::UPDATE) {
             OpenStartMenu();
@@ -463,7 +443,6 @@ void App::HandleGlobalShortcuts() {
             CloseAllMenus();
         }
     }
-    // For sub‑menus, still allow Escape/X to go back to start menu
     if (Util::Input::IsKeyDown(Util::Keycode::X) || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
         if (m_CurrentState == State::POKEMON_MENU || m_CurrentState == State::INVENTORY_MENU) {
             ReturnToStartMenu();
@@ -520,7 +499,6 @@ std::shared_ptr<Pokemon> App::GenerateWildPokemon(const std::string& mapPath) {
 void App::ProcessShopState() {
     ShopMenu::Result result = m_ShopMenu->Update();
 
-    // Reusable property lookup
     auto getProps = [](const std::string& name) -> const ItemProperties& {
         return ItemDatabase::GetProperties(name);
     };
@@ -530,7 +508,6 @@ void App::ProcessShopState() {
             std::string itemName = m_ShopMenu->GetSelectedItemName();
             const auto& props = getProps(itemName);
 
-            // Locate the shop entry to check / decrease stock
             auto it = std::find_if(m_CurrentShopData.items.begin(), m_CurrentShopData.items.end(),
                 [&](const ShopItem& si) { return si.itemName == itemName; });
             int stock = (it != m_CurrentShopData.items.end()) ? it->quantity : -1;
@@ -543,20 +520,16 @@ void App::ProcessShopState() {
             if (m_Character->SpendMoney(props.buyPrice)) {
                 m_Character->AddItem(itemName, props.category, 1);
 
-                // Decrease stock if limited
                 if (it != m_CurrentShopData.items.end() && stock > 0)
                     it->quantity--;
 
-                // 1. Update the stored buy data (stock changed)
                 m_ShopMenu->SetBuyData(m_CurrentShopData.items, getProps);
 
-                // 2. Update the stored player inventory
                 std::map<std::string, int> inv;
                 for (const auto& [name, data] : m_Character->GetInventory())
                     inv[name] = data.quantity;
                 m_ShopMenu->SetPlayerInventory(inv);
 
-                // 3. Refresh the buy list and show current money
                 m_ShopMenu->LoadBuyItems(m_CurrentShopData.items, getProps);
                 m_ShopMenu->Show(ShopMenu::Mode::BUY, m_Character->GetMoney());
             } else {
@@ -573,13 +546,11 @@ void App::ProcessShopState() {
                 m_Character->RemoveItem(itemName, 1);
                 m_Character->AddMoney(props.sellPrice);
 
-                // 1. Update the stored player inventory
                 std::map<std::string, int> inv;
                 for (const auto& [name, data] : m_Character->GetInventory())
                     inv[name] = data.quantity;
                 m_ShopMenu->SetPlayerInventory(inv);
 
-                // 2. Refresh the sell list and show updated money
                 m_ShopMenu->LoadSellItems(inv, getProps);
                 m_ShopMenu->Show(ShopMenu::Mode::SELL, m_Character->GetMoney());
             }
@@ -598,9 +569,45 @@ void App::ProcessShopState() {
 }
 
 void App::ProcessDialogueState() {
+    // --- NEW: Intercept for Starter Confirmation Overlay ---
+    if (m_PendingStarterConfirm) {
+        if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
+            // Player chose YES
+            m_Character->AddPokemon(m_StarterToGive);
+            GameFlags::Set("chosen_starter", true);
+            LOG_INFO("Player selected starter: {}", m_StarterToGive->GetName());
+
+            m_PokemonMenu->Hide(); // Hide the preview overlay
+            m_PendingStarterConfirm = false;
+
+            // Immediately show the success text
+            m_CurrentDialogueLines = { "Received " + m_StarterToGive->GetName() + "! Take good care of it!" };
+            m_CurrentDialogueIndex = 0;
+            m_DialogueText->SetText(m_CurrentDialogueLines[0]);
+            float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
+            m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+            
+            m_StarterToGive.reset();
+        }
+        else if (Util::Input::IsKeyDown(Util::Keycode::X) || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+            // Player chose NO
+            m_PokemonMenu->Hide(); // Hide the preview overlay
+            m_PendingStarterConfirm = false;
+
+            // Immediately show the rejection text
+            m_CurrentDialogueLines = { "You decided not to choose " + m_StarterToGive->GetName() + "." };
+            m_CurrentDialogueIndex = 0;
+            m_DialogueText->SetText(m_CurrentDialogueLines[0]);
+            float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
+            m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+            
+            m_StarterToGive.reset();
+        }
+        return; // Block normal dialogue Z-advance while the prompt is active
+    }
+
     if (!Util::Input::IsKeyDown(Util::Keycode::Z)) return;
 
-    // Still more lines to show
     if (!m_CurrentDialogueLines.empty() &&
         m_CurrentDialogueIndex < m_CurrentDialogueLines.size() - 1) {
         m_CurrentDialogueIndex++;
@@ -610,7 +617,6 @@ void App::ProcessDialogueState() {
         return;
     }
 
-    // Last line confirmed – close dialogue UI
     m_DialogueBoxUI->SetVisible(false);
     m_DialogueUI->SetVisible(false);
     m_Map->SetPaused(false);
@@ -620,17 +626,15 @@ void App::ProcessDialogueState() {
         return;
     }
 
-    // Grab everything before the pointer goes away
     const NPCAction action      = m_ActiveNPC->GetActionType();
     const std::string data      = m_ActiveNPC->GetActionData();
     const std::string flag      = m_ActiveNPC->GetInteractFlag();
     const ItemCategory category = m_ActiveNPC->GetActionCategory();
     auto npcParty               = m_ActiveNPC->GetParty();
 
-    // Grab reward info if this is a BATTLE NPC
     std::string rewardItem;
     int rewardQty = 0;
-    int rewardMoney =0;
+    int rewardMoney = 0;
     if (action == NPCAction::BATTLE) {
         rewardItem = m_ActiveNPC->GetRewardItemName();
         rewardQty  = m_ActiveNPC->GetRewardQuantity();
@@ -690,7 +694,6 @@ void App::ProcessDialogueState() {
             m_Map->SetVisible(false);
             m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npcParty, flag);
 
-            // Flag is set by BattleUI on victory – do NOT set it here
             m_CurrentState = State::BATTLE;
             break;
         }
@@ -709,7 +712,7 @@ void App::ProcessDialogueState() {
             if (iss >> mapFile >> wx >> wy) {
                 std::string fullPath = MAP_DIR + mapFile;
                 m_Map->LoadLevel(fullPath);
-                m_Map->LoadConnections(RESOURCE_DIR "/maps/connections.txt"); // ← ADD THIS
+                m_Map->LoadConnections(RESOURCE_DIR "/maps/connections.txt");
                 m_Character->SetGridPosition(wx, wy);
                 m_Map->WarpTo(wx, wy);
             }
@@ -718,49 +721,51 @@ void App::ProcessDialogueState() {
             m_CurrentState = State::UPDATE;
             break;
         }
-        case NPCAction::SELECT_STARTER: {
-            // Only allow picking if they haven't chosen one yet
-            if (!data.empty() && !GameFlags::Get("chosen_starter")) {
-                std::shared_ptr<Pokemon> starter = nullptr;
 
-                // Instantiate the selected Pokemon based on the NPC's action data
+        case NPCAction::SELECT_STARTER: {
+            if (!data.empty() && !GameFlags::Get("chosen_starter")) {
+                std::shared_ptr<Pokemon> preview = nullptr;
                 if (data == "Bulbasaur") {
-                    starter = std::make_shared<Pokemon>("Bulbasaur", 5, PokemonType::GRASS, PokemonType::POISON, 45, 49, 49, 65, 65, 45, 45);
-                    starter->LearnMove("Tackle");
-                    starter->LearnMove("Growl");
-                } 
-                else if (data == "Charmander") {
-                    starter = std::make_shared<Pokemon>("Charmander", 5, PokemonType::FIRE, PokemonType::NONE, 39, 52, 43, 60, 50, 65, 45);
-                    starter->LearnMove("Scratch");
-                    starter->LearnMove("Growl");
-                } 
-                else if (data == "Squirtle") {
-                    starter = std::make_shared<Pokemon>("Squirtle", 5, PokemonType::WATER, PokemonType::NONE, 44, 48, 65, 50, 64, 43, 43);
-                    starter->LearnMove("Tackle");
-                    starter->LearnMove("Tail Whip");
+                    preview = std::make_shared<Pokemon>("Bulbasaur", 5, PokemonType::GRASS, PokemonType::POISON, 45, 49, 49, 65, 65, 45, 45);
+                    preview->LearnMove("Tackle");
+                    preview->LearnMove("Growl");
+                } else if (data == "Charmander") {
+                    preview = std::make_shared<Pokemon>("Charmander", 5, PokemonType::FIRE, PokemonType::NONE, 39, 52, 43, 60, 50, 65, 45);
+                    preview->LearnMove("Scratch");
+                    preview->LearnMove("Growl");
+                } else if (data == "Squirtle") {
+                    preview = std::make_shared<Pokemon>("Squirtle", 5, PokemonType::WATER, PokemonType::NONE, 44, 48, 65, 50, 64, 43, 43);
+                    preview->LearnMove("Tackle");
+                    preview->LearnMove("Tail Whip");
                 }
 
-                if (starter) {
-                    m_Character->AddPokemon(starter);
-                    GameFlags::Set("chosen_starter", true);
-                    LOG_INFO("Player successfully selected starter: {}", data);
+                if (preview) {
+                    m_StarterToGive = preview;
+                    m_PendingStarterConfirm = true; // Flag tells ProcessDialogueState to wait for Z/X
+                    
+                    // Show the visual overlay
+                    m_PokemonMenu->ShowPreview(*preview); 
 
-                    // Seamlessly display a custom follow-up confirmation box
-                    m_CurrentState = State::DIALOGUE;
-                    m_DialogueBoxUI->SetVisible(true);
-                    m_DialogueUI->SetVisible(true);
-                    
-                    m_CurrentDialogueLines = { "Received " + data + "! Take good care of it!" };
+                    // Alter the text box to prompt the user
+                    m_CurrentDialogueLines = { "Do you want to choose " + preview->GetName() + "? [Z] Yes  [X] No" };
                     m_CurrentDialogueIndex = 0;
-                    m_DialogueText->SetText(m_CurrentDialogueLines[m_CurrentDialogueIndex]);
-                    
-                    // Recenter dialogue text using your engine's logic
+                    m_DialogueText->SetText(m_CurrentDialogueLines[0]);
                     float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
                     m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
-                    return; 
+                    
+                    // Ensure dialogue UI stays fully visible
+                    m_DialogueBoxUI->SetVisible(true);
+                    m_DialogueUI->SetVisible(true);
+
+                    // Force state back to DIALOGUE so the interception block catches the very next frame
+                    m_CurrentState = State::DIALOGUE;
+                } else {
+                    LOG_ERROR("Unknown starter species: {}", data);
+                    m_CurrentState = State::UPDATE;
                 }
+            } else {
+                m_CurrentState = State::UPDATE;
             }
-            m_CurrentState = State::UPDATE;
             break;
         }
 
@@ -770,7 +775,6 @@ void App::ProcessDialogueState() {
             int price = 3000;
             std::string minBall = "Greatball";
 
-            // Sequential logic: if you have Gengar, offer Charizard
             bool hasGengar = false;
             bool hasCharizard = false;
             for (auto& p : m_Character->GetParty()) {
@@ -804,7 +808,7 @@ void App::ProcessDialogueState() {
 
                 int requiredRank = getBallRank(minBall);
                 std::string bestBall = "";
-                int bestRank = 100; // Find lowest valid ball to consume
+                int bestRank = 100;
 
                 for (const auto& pair : m_Character->GetInventory()) {
                     const std::string& name = pair.first;

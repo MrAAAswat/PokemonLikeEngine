@@ -17,8 +17,6 @@
 #include "Item.hpp"
 #include "NPC.hpp"
 
-
-
 struct InteractionResult {
     std::vector<std::string> dialogueLines; 
     std::string specialAction;              
@@ -34,7 +32,7 @@ public:
         POKEMON_MENU,     
         INVENTORY_MENU,
         BATTLE,
-        SHOP,   
+        SHOP,
         END
     };
 
@@ -53,10 +51,10 @@ public:
     std::shared_ptr<StartMenu> m_StartMenu;
     bool JustFinishedMoving() const { return m_JustFinishedMoving; }
 
-
 private:
     void ValidTask();
     int m_SwapIndex = -1;
+    
     std::shared_ptr<ShopMenu> m_ShopMenu;
     ShopData m_CurrentShopData;   
     std::shared_ptr<Util::Renderer> m_Renderer;
@@ -69,7 +67,7 @@ private:
     std::shared_ptr<NPC> m_ActiveNPC = nullptr;
 
     // --- Your UI components ---
-    std::shared_ptr<Util::GameObject> m_DialogueUI; // Confirmed GameObject
+    std::shared_ptr<Util::GameObject> m_DialogueUI;
     std::shared_ptr<Util::Text> m_DialogueText;
     
     // Submenus
@@ -82,7 +80,9 @@ private:
     int         m_PendingRewardMoney = 0;
     std::string m_PendingBattleFlag;
 
-    bool  m_PendingStarterConfirm = false;
+    // NEW: Handles the in-dialogue starter selection
+    bool m_PendingStarterConfirm = false;
+    std::shared_ptr<Pokemon> m_StarterToGive;
     std::string m_PendingStarterSpecies;
 
     // ==========================================

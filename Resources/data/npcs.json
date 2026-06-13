@@ -441,13 +441,12 @@
     {
       "id": 116,
       "texture": "Pokeball",
-      "visualOffsetY": -20.0,
-      "zIndex": 0.8,
+      "visualOffsetY": -16.0,
+      "zIndex": 0.9,
       "dynamicZ": true,
       "action": "SELECT_STARTER",
       "actionData": "Bulbasaur",
       "flagOnInteract": "",
-      "flagToHide": "chosen_starter",
       "movement": {
         "type": "STILL",
         "moveInterval": 0,
@@ -472,13 +471,12 @@
     {
       "id": 117,
       "texture": "Pokeball",
-      "visualOffsetY": -20.0,
-      "zIndex": 0.8,
+      "visualOffsetY": -16.0,
+      "zIndex": 0.9,
       "dynamicZ": true,
       "action": "SELECT_STARTER",
       "actionData": "Charmander",
       "flagOnInteract": "",
-      "flagToHide": "chosen_starter",
       "movement": {
         "type": "STILL",
         "moveInterval": 0,
@@ -503,13 +501,12 @@
     {
       "id": 118,
       "texture": "PokeBall",
-      "visualOffsetY": -20.0,
-      "zIndex": 0.8,
+      "visualOffsetY": -16.0,
+      "zIndex": 0.9,
       "dynamicZ": true,
       "action": "SELECT_STARTER",
       "actionData": "Squirtle",
       "flagOnInteract": "",
-      "flagToHide": "chosen_starter",
       "movement": {
         "type": "STILL",
         "moveInterval": 0,

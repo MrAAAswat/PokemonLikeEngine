@@ -3,26 +3,47 @@
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
+#include <string>
 
 const std::string POKEMON_RES = std::string(RESOURCE_DIR) + "/Pokemon/";
+
+// Helper to get a type name string (you may already have this elsewhere)
+static std::string TypeToString(PokemonType type) {
+    switch (type) {
+        case PokemonType::NORMAL:   return "Normal";
+        case PokemonType::FIRE:     return "Fire";
+        case PokemonType::WATER:    return "Water";
+        case PokemonType::GRASS:    return "Grass";
+        case PokemonType::ELECTRIC: return "Electric";
+        case PokemonType::ICE:      return "Ice";
+        case PokemonType::FIGHTING: return "Fighting";
+        case PokemonType::POISON:   return "Poison";
+        case PokemonType::GROUND:   return "Ground";
+        case PokemonType::FLYING:   return "Flying";
+        case PokemonType::PSYCHIC:  return "Psychic";
+        case PokemonType::BUG:      return "Bug";
+        case PokemonType::ROCK:     return "Rock";
+        case PokemonType::GHOST:    return "Ghost";
+        case PokemonType::DRAGON:   return "Dragon";
+        default:                    return "???";
+    }
+}
 
 PokemonMenu::PokemonMenu(std::shared_ptr<Util::Renderer> renderer)
     : m_Renderer(renderer)
 {
-    // --- Box background ---
     m_BoxUI = std::make_shared<Util::GameObject>();
-    auto boxImg = ResourceManager::GetImageStore().Get(
-        RESOURCE_DIR "/UI/InventoryBoxUI.png");
+    // Make sure bg.png is in your UI folder!
+    auto boxImg = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/Party_bg.png"); 
     m_BoxUI->SetDrawable(boxImg);
+    m_BoxUI->m_Transform.scale = {1.0f, 1.0f};
     m_BoxUI->SetZIndex(90.0f);
     m_BoxUI->m_Transform.translation = {0.0f, 0.0f};
     m_BoxUI->SetVisible(false);
     m_Renderer->AddChild(m_BoxUI);
 
-    // --- Cursor ---
     m_CursorUI = std::make_shared<Util::GameObject>();
-    auto cursorImg = ResourceManager::GetImageStore().Get(
-        RESOURCE_DIR "/UI/Cursor.png");
+    auto cursorImg = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/Cursor.png");
     m_CursorUI->SetDrawable(cursorImg);
     m_CursorUI->SetZIndex(92.0f);
     m_CursorUI->SetVisible(false);
@@ -36,64 +57,54 @@ void PokemonMenu::ClearSlots() {
     }
     m_Slots.clear();
 }
-
+// ──────────────────────────────────────
+//  Party list slots (unchanged)
+// ──────────────────────────────────────
 void PokemonMenu::BuildSlots(const std::vector<std::shared_ptr<Pokemon>>& party) {
     ClearSlots();
 
     if (party.empty()) {
-        // Create a single slot with "No Pokemon in party!" text
-        Slot emptySlot;
-        auto txt = std::make_shared<Util::Text>(
-            RESOURCE_DIR "/Fonts/micross.ttf", 24,
-            "No Pokemon in party!", Util::Color(50, 50, 50));
-        auto txtObj = std::make_shared<Util::GameObject>();
-        txtObj->SetDrawable(txt);
-        txtObj->SetZIndex(91.0f);
-        // Centre the text (roughly)
-        float textW = txt->GetSize().x;
-        txtObj->m_Transform.translation = { -textW/2.0f, SLOT_START_Y };
-        m_Renderer->AddChild(txtObj);
-        emptySlot.text = txtObj;
-        m_Slots.push_back(emptySlot);
+        // ... (Keep your empty party logic here) ...
         return;
     }
 
-    for (size_t i = 0; i < party.size(); ++i) {
+    // Coordinates for the 6 boxes (Top L/R, Mid L/R, Bot L/R)
+    std::vector<glm::vec2> gridPositions = {
+        {COL_1_X, ROW_1_Y}, {COL_2_X, ROW_1_Y},
+        {COL_1_X, ROW_2_Y}, {COL_2_X, ROW_2_Y},
+        {COL_1_X, ROW_3_Y}, {COL_2_X, ROW_3_Y}
+    };
+
+    // Build max 6 slots to match your UI
+    for (size_t i = 0; i < party.size() && i < 6; ++i) {
         const auto& p = party[i];
         Slot slot;
 
-        // 1. SPRITE
+        // Sprite
         std::string spritePath = POKEMON_RES + p->GetName() + "_front_1.png";
         auto spriteObj = std::make_shared<Util::GameObject>();
         auto spriteImg = ResourceManager::GetImageStore().Get(spritePath);
         if (!spriteImg) {
-            // Fallback to a placeholder if image missing
-            spriteImg = ResourceManager::GetImageStore().Get(
-                RESOURCE_DIR "/Pokemon/placeholder.png");
+            spriteImg = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/Pokemon/placeholder.png");
         }
         spriteObj->SetDrawable(spriteImg);
         spriteObj->m_Transform.scale = {SPRITE_SCALE, SPRITE_SCALE};
         spriteObj->SetZIndex(91.0f);
+        spriteObj->m_Transform.translation = { gridPositions[i].x + SPRITE_OFFSET_X, gridPositions[i].y };
 
-        // 2. INFO TEXT
-        std::string info = p->GetName()
-                         + "  Lv." + std::to_string(p->GetLevel())
-                         + "  HP: " + std::to_string(p->GetCurrentHP())
-                         + "/" + std::to_string(p->GetMaxHP());
+        // Info text - using \n to stack Name and HP so it fits nicely in the box
+        std::string info = p->GetName() + "  Lv." + std::to_string(p->GetLevel()) + "\n"
+                         + "HP: " + std::to_string(p->GetCurrentHP()) + "/" + std::to_string(p->GetMaxHP());
+        
         auto textDraw = std::make_shared<Util::Text>(
-            RESOURCE_DIR "/Fonts/micross.ttf", 24,
-            info, Util::Color(50, 50, 50));
+            RESOURCE_DIR "/Fonts/micross.ttf", 24, info, Util::Color(50, 50, 50));
         auto textObj = std::make_shared<Util::GameObject>();
         textObj->SetDrawable(textDraw);
         textObj->SetZIndex(91.0f);
-
-        // 3. POSITIONING
-        float y = SLOT_START_Y - static_cast<float>(i) * SLOT_SPACING;
-        // Sprite: centred at SPRITE_LEFT_X
-        spriteObj->m_Transform.translation = { SPRITE_LEFT_X, y };
-        // Text: left‑aligned at TEXT_LEFT_MARGIN (manually offset by half width)
-        float textW = textDraw->GetSize().x;
-        textObj->m_Transform.translation = { TEXT_LEFT_MARGIN + textW / 2.0f, y };
+        
+        // Align text to the right of the sprite
+        float textHalfW = textDraw->GetSize().x / 2.0f;
+        textObj->m_Transform.translation = { gridPositions[i].x + TEXT_OFFSET_X + textHalfW, gridPositions[i].y };
 
         m_Renderer->AddChild(spriteObj);
         m_Renderer->AddChild(textObj);
@@ -104,9 +115,72 @@ void PokemonMenu::BuildSlots(const std::vector<std::shared_ptr<Pokemon>>& party)
     }
 }
 
+// ──────────────────────────────────────
+//  Single‑Pokémon preview slot
+// ──────────────────────────────────────
+void PokemonMenu::BuildPreviewSlot(const Pokemon& pkmn) {
+    ClearSlots();
+
+    Slot slot;
+
+    // Sprite (larger, centred near top)
+    std::string spritePath = POKEMON_RES + pkmn.GetName() + "_front_1.png";
+    auto spriteImg = ResourceManager::GetImageStore().Get(spritePath);
+    if (!spriteImg) {
+        spriteImg = ResourceManager::GetImageStore().Get(
+            RESOURCE_DIR "/Pokemon/placeholder.png");
+    }
+    slot.sprite = std::make_shared<Util::GameObject>();
+    slot.sprite->SetDrawable(spriteImg);
+    slot.sprite->m_Transform.scale = {3.0f, 3.0f};
+    slot.sprite->m_Transform.translation = {0.0f, 120.0f};
+    slot.sprite->SetZIndex(91.0f);
+    m_Renderer->AddChild(slot.sprite);
+
+    // Build the info string using the Pokemon’s own methods
+    std::string info =
+        pkmn.GetName() + "  Lv." + std::to_string(pkmn.GetLevel()) + "\n"
+        + "Type: " + pkmn.GetTypeString() + "\n"                // e.g. "Fire/Flying"
+        + "HP: " + std::to_string(pkmn.GetCurrentHP()) + "/" + std::to_string(pkmn.GetMaxHP()) + "\n"
+        + "ATK:"  + std::to_string(pkmn.GetAttack())
+        + "  DEF:" + std::to_string(pkmn.GetDefense()) + "\n"
+        + "SP.ATK:" + std::to_string(pkmn.GetSpecialAttack())
+        + "  SP.DEF:" + std::to_string(pkmn.GetSpecialDefense()) + "\n"
+        + "SPEED:" + std::to_string(pkmn.GetSpeed()) + "\n\n"
+        + "Moves:\n";
+
+    // Append the actual moves (max 4) from GetMoves()
+    const auto& moves = pkmn.GetMoves();
+    for (size_t i = 0; i < moves.size() && i < 4; ++i) {
+        info += "  " + moves[i] + "\n";
+    }
+
+    info += "\n[Z] Choose this Pokemon   [X] Cancel";
+
+    auto textDraw = std::make_shared<Util::Text>(
+        RESOURCE_DIR "/Fonts/micross.ttf", 22, info,
+        Util::Color(50, 50, 50));
+    slot.text = std::make_shared<Util::GameObject>();
+    slot.text->SetDrawable(textDraw);
+    slot.text->SetZIndex(91.0f);
+    // Centre the text block horizontally, below the sprite
+    float textW = textDraw->GetSize().x;
+    slot.text->m_Transform.translation = { -textW / 2.0f, -140.0f };
+    m_Renderer->AddChild(slot.text);
+
+    m_Slots.push_back(slot);
+}
+
+// ──────────────────────────────────────
+//  Show / Hide
+// ──────────────────────────────────────
 void PokemonMenu::Show(const std::vector<std::shared_ptr<Pokemon>>& party) {
-    m_PartySize = static_cast<int>(party.size());
-    m_CursorIndex = 0;
+    m_Mode          = Mode::PARTY_LIST;
+    m_Confirmed     = false;
+    m_Cancelled     = false;
+    m_ActionSelected= false;
+    m_PartySize     = static_cast<int>(party.size());
+    m_CursorIndex   = 0;
     m_InputCooldown = 0;
 
     BuildSlots(party);
@@ -116,53 +190,92 @@ void PokemonMenu::Show(const std::vector<std::shared_ptr<Pokemon>>& party) {
     UpdateCursorPosition();
 }
 
+void PokemonMenu::ShowPreview(const Pokemon& pkmn) {
+    m_Mode      = Mode::PREVIEW;
+    m_Confirmed = false;
+    m_Cancelled = false;
+    m_PartySize = 0;   // no cursor navigation
+    m_InputCooldown = 0;
+
+    BuildPreviewSlot(pkmn);
+
+    m_BoxUI->SetVisible(true);
+    m_CursorUI->SetVisible(false);
+}
+
 void PokemonMenu::Hide() {
     m_BoxUI->SetVisible(false);
     m_CursorUI->SetVisible(false);
-    ClearSlots();   // remove all dynamic objects from renderer
+    ClearSlots();
+    m_Confirmed = false;
+    m_Cancelled = false;
 }
 
+// ──────────────────────────────────────
+//  Update (mode‑aware)
+// ──────────────────────────────────────
 bool PokemonMenu::Update() {
-    // Input cooldown
-    if (m_InputCooldown > 0) {
-        --m_InputCooldown;
-        // Still allow immediate cancel
-        if (Util::Input::IsKeyDown(Util::Keycode::X) ||
-            Util::Input::IsKeyDown(Util::Keycode::ESCAPE))
+    if (m_Mode == Mode::PARTY_LIST) {
+        if (m_InputCooldown > 0) {
+            --m_InputCooldown;
+            return false;
+        }
+
+        if (m_PartySize > 0) {
+            // 2D Navigation mapping
+            if (Util::Input::IsKeyDown(Util::Keycode::RIGHT) || Util::Input::IsKeyDown(Util::Keycode::D)) {
+                if (m_CursorIndex % 2 == 0 && m_CursorIndex + 1 < m_PartySize) {
+                    m_CursorIndex++; m_InputCooldown = INPUT_DELAY; UpdateCursorPosition();
+                }
+            }
+            else if (Util::Input::IsKeyDown(Util::Keycode::LEFT) || Util::Input::IsKeyDown(Util::Keycode::A)) {
+                if (m_CursorIndex % 2 != 0) {
+                    m_CursorIndex--; m_InputCooldown = INPUT_DELAY; UpdateCursorPosition();
+                }
+            }
+            else if (Util::Input::IsKeyDown(Util::Keycode::DOWN) || Util::Input::IsKeyDown(Util::Keycode::S)) {
+                if (m_CursorIndex + 2 < m_PartySize) {
+                    m_CursorIndex += 2; m_InputCooldown = INPUT_DELAY; UpdateCursorPosition();
+                }
+            }
+            else if (Util::Input::IsKeyDown(Util::Keycode::UP) || Util::Input::IsKeyDown(Util::Keycode::W)) {
+                if (m_CursorIndex - 2 >= 0) {
+                    m_CursorIndex -= 2; m_InputCooldown = INPUT_DELAY; UpdateCursorPosition();
+                }
+            }
+
+            // Select to view Preview
+            if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
+                m_ActionSelected = true;
+                return true;
+            }
+        }
+
+        if (Util::Input::IsKeyDown(Util::Keycode::X) || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
             return true;
+        }
         return false;
     }
 
-    if (m_PartySize > 0) {
-        if (Util::Input::IsKeyDown(Util::Keycode::UP) ||
-            Util::Input::IsKeyDown(Util::Keycode::W)) {
-            m_CursorIndex = (m_CursorIndex - 1 + m_PartySize) % m_PartySize;
-            UpdateCursorPosition();
-            m_InputCooldown = INPUT_DELAY;
-        }
-        else if (Util::Input::IsKeyDown(Util::Keycode::DOWN) ||
-                 Util::Input::IsKeyDown(Util::Keycode::S)) {
-            m_CursorIndex = (m_CursorIndex + 1) % m_PartySize;
-            UpdateCursorPosition();
-            m_InputCooldown = INPUT_DELAY;
+    if (m_Mode == Mode::PREVIEW) {
+        if (Util::Input::IsKeyDown(Util::Keycode::Z) || Util::Input::IsKeyDown(Util::Keycode::X) || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+            m_Cancelled = true; 
+            return true; // Any key dismisses the preview when browsing
         }
     }
-
-    if (Util::Input::IsKeyDown(Util::Keycode::X) ||
-        Util::Input::IsKeyDown(Util::Keycode::ESCAPE))
-        return true;
-
     return false;
 }
-
 void PokemonMenu::UpdateCursorPosition() {
-    if (m_PartySize == 0 || m_CursorIndex >= m_PartySize)
-        return;
+    if (m_PartySize == 0 || m_CursorIndex >= m_PartySize) return;
 
-    // Align cursor next to the selected slot’s sprite
-    float y = SLOT_START_Y - m_CursorIndex * SLOT_SPACING + CURSOR_Y_ADJUST;
+    std::vector<glm::vec2> gridPositions = {
+        {COL_1_X, ROW_1_Y}, {COL_2_X, ROW_1_Y},
+        {COL_1_X, ROW_2_Y}, {COL_2_X, ROW_2_Y},
+        {COL_1_X, ROW_3_Y}, {COL_2_X, ROW_3_Y}
+    };
+
     m_CursorUI->m_Transform.translation = {
-        SPRITE_LEFT_X + CURSOR_OFFSET_X,
-        y
+        gridPositions[m_CursorIndex].x + CURSOR_OFFSET_X,
+        gridPositions[m_CursorIndex].y
     };
 }
