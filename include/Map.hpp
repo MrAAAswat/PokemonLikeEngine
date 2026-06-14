@@ -2,6 +2,7 @@
 #define MAP_HPP
 
 #include "pch.hpp"
+#include <functional>
 #include "Vehicle.hpp"
 #include "NPC.hpp"
 #include "Character.hpp"
@@ -66,10 +67,13 @@ struct NPCProperties {
     float                    moveInterval = 2.0f;
     int                      wanderRadius = 3;
     std::vector<PatrolPoint> patrolPoints = {};
+    int         sightRange     = 0;         
+    std::string sightDirection = "Down";       
 
     // Dialogue — default first, then flag-conditional entries in priority order
     std::vector<std::string>      defaultDialogue;
     std::vector<NPCDialogueEntry> conditionalDialogue;
+    
     int rewardMoney;
     struct Reward {
         std::string itemName;
@@ -125,8 +129,28 @@ public:
     static ItemCategory StringToCategory(const std::string& s);   
     float GetWorldOffsetX() const { return m_WorldOffsetX; }
     float GetWorldOffsetY() const { return m_WorldOffsetY; }
+    void EndNPCTrainerApproach();
+    void StartNPCTrainerApproach(NPC* npc, int targetX, int targetY);
+    bool IsNPCTrainerApproachActive() const { return m_NPCApproachActive; }
+    void InitiateBattleWithNPC(NPC* npc);
+    void TriggerInteraction(NPC* npc);
+
+    void SetPlayer(Player* player) { m_Player = player; }
+    Player* GetPlayer() const { return m_Player; }
+
+    // Player grid getters
+    int GetPlayerGridX() const { return m_PlayerGridX; }
+    int GetPlayerGridY() const { return m_PlayerGridY; }
+    void SetBattleCallback(std::function<void(NPC*)> callback) { m_BattleCallback = callback; }
+    void SetInteractionCallback(std::function<void(NPC*)> cb) { m_InteractionCallback = cb; }
+    void UpdateApproachTarget();
+
 private:
+
+    Player* m_Player = nullptr;
+    bool    m_NPCApproachActive = false;
     // --- MAP DATA ---
+    std::function<void(NPC*)> m_BattleCallback;
     std::vector<std::shared_ptr<NPC>> m_NPCs;
     std::vector<std::shared_ptr<Vehicle>> m_Vehicles;
     std::vector<std::vector<int>> m_PropData;
@@ -136,6 +160,7 @@ private:
     std::vector<std::shared_ptr<Item>> m_Items;
     std::string m_CurrentLevelPath;
     std::weak_ptr<Util::Renderer> m_Renderer;
+    std::function<void(NPC*)> m_InteractionCallback;
 
     float m_WorldOffsetX = 0.0f;
     float m_WorldOffsetY = 0.0f;
@@ -145,7 +170,7 @@ private:
     int  m_PlayerGridX = -1;
     int  m_PlayerGridY = -1;
     bool m_Paused      = false;
-
+    NPC* m_ApproachNPC = nullptr;
     // --- THE REGISTRY ---
     std::unordered_map<int, TileProperties> m_TileRegistry;
     std::unordered_map<int, NPCProperties> m_NPCRegistry;

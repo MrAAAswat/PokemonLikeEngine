@@ -4,12 +4,26 @@
 #include "Util/Logger.hpp"
 #include "GameFlags.hpp"
 #include "Util/Animation.hpp"
+#include "Util/GameObject.hpp"    // for M_Transform.translation()
 
 #include <fstream>
 #include <cstdlib>   // rand()
 #include <cmath>     // std::abs()
 #include <algorithm> // std::swap
 
+// ============================================================
+//  Helper: StringToDirection (static)
+// ============================================================
+Character::Direction NPC::StringToDirection(const std::string& s) {
+    std::string upper = s;
+    for (auto& c : upper) c = static_cast<char>(toupper(c));
+    if (upper == "UP")    return Character::Direction::UP;
+    if (upper == "DOWN")  return Character::Direction::DOWN;
+    if (upper == "LEFT")  return Character::Direction::LEFT;
+    if (upper == "RIGHT") return Character::Direction::RIGHT;
+    return Character::Direction::DOWN; // default
+}
+// ============================================================
 //  Constructor
 // ============================================================
 NPC::NPC(float x, float y, const std::string& spritePath, bool visible)
@@ -19,10 +33,6 @@ NPC::NPC(float x, float y, const std::string& spritePath, bool visible)
 {
     m_Speed = 100.0f;
 
-    // NOTE: m_SpawnGridX/Y are intentionally NOT set here.
-    // Character's grid position is still the default at this point.
-    // The spawner must call SetGridPosition() then SetSpawnPoint() after construction.
-
     // Stagger first decision so grouped NPCs don't all step simultaneously.
     m_MoveTimer = m_MoveInterval * (0.5f + (rand() % 100) / 100.0f);
 
@@ -30,10 +40,18 @@ NPC::NPC(float x, float y, const std::string& spritePath, bool visible)
 }
 
 // ============================================================
-//  Active state — driven by flagToHide
+//  SetSight
+// ============================================================
+void NPC::SetSight(int range, const std::string& facing) {
+    m_HasSight = true;
+    m_SightRange = range;
+    m_SightDirection = StringToDirection(facing);
+}
+
+// ============================================================
+//  Active state
 // ============================================================
 bool NPC::IsActive() const {
-    // If the NPC has a hide flag and it's set, the NPC should vanish.
     if (!m_FlagToHide.empty()) {
         return !GameFlags::Get(m_FlagToHide);
     }
@@ -44,6 +62,33 @@ bool NPC::IsActive() const {
 //  Update
 // ============================================================
 glm::vec2 NPC::Update(std::shared_ptr<Map> map) {
+    // Locked NPCs (during dialogue or cutscenes) do not move.
+    if (m_Locked) return glm::vec2(0.0f, 0.0f); 
+
+    // If chasing but mid‑step, finish the current tile first
+    if (m_Chasing && m_IsMoving) {
+        glm::vec2 movement = Character::Update(map);
+        m_Transform.translation += movement;
+        return movement;
+    }
+
+    // If chasing and idle, decide the next action
+    if (m_Chasing) {
+        return ChasePlayer(map);
+    }
+
+    // Sight check
+    if (m_HasSight && !m_Triggered && m_ActionType == NPCAction::BATTLE) {
+        if (PlayerInSight(map)) {
+            m_PlayerTargetX = map->GetPlayerGridX();
+            m_PlayerTargetY = map->GetPlayerGridY();
+            map->StartNPCTrainerApproach(this, m_PlayerTargetX, m_PlayerTargetY);
+            m_Chasing = true;
+            return m_Transform.translation;
+        }
+    } 
+
+    // Visibility based on flags / config
     if (!IsActive() || !m_IsVisibleFromConfig) {
         SetVisible(false);
         if (!IsActive()) return glm::vec2(0.0f, 0.0f);
@@ -51,30 +96,28 @@ glm::vec2 NPC::Update(std::shared_ptr<Map> map) {
         SetVisible(true);
     }
 
-    // 1. Always finish any in-progress tile movement first.
+    // Finish any in‑progress tile movement
     if (m_IsMoving) {
         glm::vec2 movement = Character::Update(map);
         m_Transform.translation += movement;
         return movement;
     }
 
-    // 2. Freeze decisions during dialogue — NPC finishes its current step
-    //    then holds still until SetLocked(false) is called.
+    // Freeze decisions during dialogue (but we already returned if locked)
     if (m_Locked) {
         return Character::Update(map);
     }
 
-    // 3. Tick the decision timer.
+    // Decision timer
     float dt = Util::Time::GetDeltaTimeMs() / 1000.0f;
     m_MoveTimer -= dt;
-
     if (m_MoveTimer > 0.0f) {
         glm::vec2 movement = Character::Update(map);
         m_Transform.translation += movement;
         return movement;
     }
 
-    // 4. Timer expired — make a movement decision.
+    // Movement decision
     switch (m_MovementType) {
         case MovementType::LOOK_AROUND: DoLookAround(); break;
         case MovementType::WANDER:      DoWander(map);  break;
@@ -82,22 +125,15 @@ glm::vec2 NPC::Update(std::shared_ptr<Map> map) {
         case MovementType::STILL:       break;
     }
 
-    // 5. Reset timer with jitter so NPCs feel organic, not mechanical.
+    // Reset timer with organic jitter
     float jitter = (rand() % 100) / 100.0f * m_MoveInterval * 0.4f;
     m_MoveTimer = m_MoveInterval + jitter;
 
-    // 6. Apply the first frame of any movement started this decision tick.
+    // Apply the first frame of any new movement
     glm::vec2 movement = Character::Update(map);
     m_Transform.translation += movement;
     return movement;
 }
-
-// ============================================================
-//  UpdateSprite — NPC override
-//  Does NOT call SetCurrentFrame(0) on idle so the walk cycle
-//  isn't pinned to frame 0 every frame between steps.
-// ============================================================
-
 
 // ============================================================
 //  Interaction
@@ -117,16 +153,16 @@ std::vector<std::string> NPC::Interact(const Character& player) {
     FaceToward(player.GetGridX(), player.GetGridY());
     SetLocked(true);
 
-    // Previous battle-flag check ...
+    // If the interact flag is set, disable battle (one‑time fight)
     if (!m_InteractFlag.empty() && GameFlags::Get(m_InteractFlag)) {
         if (m_ActionType == NPCAction::BATTLE) {
             m_ActionType = NPCAction::NONE;
         }
     }
 
-    // NEW: Required flag check – if required flag is not set, suppress actions
+    // If a required flag is missing, suppress some actions
     if (!m_FlagRequired.empty() && !GameFlags::Get(m_FlagRequired)) {
-        if (m_ActionType == NPCAction::WARP) {   // you can extend to other actions later
+        if (m_ActionType == NPCAction::WARP) {
             m_ActionType = NPCAction::NONE;
         }
     }
@@ -153,9 +189,6 @@ void NPC::SetAction(NPCAction type,
 // ============================================================
 //  Movement helpers
 // ============================================================
-
-// Converts a grid delta (dx, dy) to the matching facing Direction.
-// Grid convention: dy=+1 is a higher row index = visually downward.
 static Character::Direction DeltaToDirection(int dx, int dy) {
     if (dx > 0) return Character::Direction::RIGHT;
     if (dx < 0) return Character::Direction::LEFT;
@@ -163,15 +196,11 @@ static Character::Direction DeltaToDirection(int dx, int dy) {
     return Character::Direction::UP;
 }
 
-// Wrapper around TryMove that also updates the facing direction.
-// TryMove only sets m_CurrentDirection (movement vector) — it never calls
-// SetDirection, so the sprite would always face DOWN without this wrapper.
 bool NPC::TryMoveInDirection(int dx, int dy, std::shared_ptr<Map> map) {
     SetDirection(DeltaToDirection(dx, dy));
     return TryMove(dx, dy, map);
 }
 
-// LOOK_AROUND — pivot to a different direction on a timer; no tile movement.
 void NPC::DoLookAround() {
     static const Direction dirs[] = {
         Direction::DOWN, Direction::UP,
@@ -186,15 +215,12 @@ void NPC::DoLookAround() {
     SetDirection(next);
 }
 
-// WANDER — shuffle randomly within m_WanderRadius tiles of spawn.
 void NPC::DoWander(std::shared_ptr<Map> map) {
-    // 30% chance to pause and glance around — matches GBA NPC personality.
     if (rand() % 10 < 3) {
         DoLookAround();
         return;
     }
 
-    // Four candidate deltas in random order (Fisher-Yates).
     int dx[] = { 0,  0, -1, 1 };
     int dy[] = { -1, 1,  0, 0 };
 
@@ -207,26 +233,18 @@ void NPC::DoWander(std::shared_ptr<Map> map) {
     for (int i = 0; i < 4; ++i) {
         int nextX = m_GridX + dx[i];
         int nextY = m_GridY + dy[i];
-
-        // Never leave the home radius.
         if (std::abs(nextX - m_SpawnGridX) > m_WanderRadius) continue;
         if (std::abs(nextY - m_SpawnGridY) > m_WanderRadius) continue;
-
         if (TryMoveInDirection(dx[i], dy[i], map)) return;
     }
 
-    // All directions blocked or out of radius — at least look active.
     DoLookAround();
 }
 
-// PATROL — step toward the current waypoint; ping-pong at each end.
 void NPC::DoPatrol(std::shared_ptr<Map> map) {
-    // Need at least 2 points to form a route worth patrolling.
     if (m_PatrolPoints.size() < 2) return;
 
     auto [targetX, targetY] = m_PatrolPoints[m_PatrolIndex];
-
-    // One-axis step toward waypoint (X preferred over Y).
     int dx = 0, dy = 0;
     if      (targetX > m_GridX) dx =  1;
     else if (targetX < m_GridX) dx = -1;
@@ -234,7 +252,6 @@ void NPC::DoPatrol(std::shared_ptr<Map> map) {
     else if (targetY < m_GridY) dy = -1;
 
     if (dx == 0 && dy == 0) {
-        // Arrived at waypoint — advance index with ping-pong logic.
         if (!m_PatrolReverse) {
             ++m_PatrolIndex;
             if (m_PatrolIndex >= static_cast<int>(m_PatrolPoints.size())) {
@@ -251,10 +268,7 @@ void NPC::DoPatrol(std::shared_ptr<Map> map) {
         return;
     }
 
-    if (!TryMoveInDirection(dx, dy, map)) {
-        // Temporarily blocked (player / another NPC in path) — wait and retry.
-        //DoLookAround();
-    }
+    TryMoveInDirection(dx, dy, map);
 }
 
 // ============================================================
@@ -265,9 +279,6 @@ bool NPC::FileExists(const std::string& path) {
     return f.good();
 }
 
-// Probes for base + up to two walk frames per direction.
-// Cycle layout: [base, frame2, base, frame3] when all three exist.
-// Missing frames are silently skipped — safe for every NPC sprite set.
 std::vector<std::string> NPC::BuildWalkCycle(const std::string& base) const {
     const std::string f0 = base + ".png";
     const std::string f2 = base + "2.png";
@@ -281,17 +292,17 @@ std::vector<std::string> NPC::BuildWalkCycle(const std::string& base) const {
     const bool has2 = FileExists(f2);
     const bool has3 = FileExists(f3);
 
-    if ( has2 &&  has3) return { f0, f2, f0, f3 }; // Full 4-frame walk cycle
+    if ( has2 &&  has3) return { f0, f2, f0, f3 };
     if ( has2 && !has3) return { f0, f2 };
     if (!has2 &&  has3) return { f0, f3 };
-    return { f0 };                                   // Static sprite
+    return { f0 };
 }
 
 void NPC::LoadSprites() {
     if (!m_IsVisibleFromConfig) {
-        return; // Skip loading if specifically marked as invisible
+        return;
     }
-    // --- Build animations for the four cardinal directions ---
+
     auto downFrames  = BuildWalkCycle(m_SpritePath + "_Down");
     auto upFrames    = BuildWalkCycle(m_SpritePath + "_Up");
     auto leftFrames  = BuildWalkCycle(m_SpritePath + "_Left");
@@ -306,8 +317,7 @@ void NPC::LoadSprites() {
     if (!rightFrames.empty())
         m_AnimRight = std::make_shared<Util::Animation>(rightFrames, false, 150, true, 0);
 
-    // --- Fallback 1: missing directions copy an existing one ---
-    // Prioritise Down, then Right, then Left, then Up as fallback sources.
+    // Fallback cascade
     if (!m_AnimDown && m_AnimUp)    m_AnimDown  = m_AnimUp;
     if (!m_AnimDown && m_AnimLeft)  m_AnimDown  = m_AnimLeft;
     if (!m_AnimDown && m_AnimRight) m_AnimDown  = m_AnimRight;
@@ -316,9 +326,7 @@ void NPC::LoadSprites() {
     if (!m_AnimLeft)  m_AnimLeft  = (m_AnimRight ? m_AnimRight : m_AnimDown);
     if (!m_AnimRight) m_AnimRight = (m_AnimLeft  ? m_AnimLeft  : m_AnimDown);
 
-    // --- Fallback 2: if everything is still null, use the "Grant" sprite ---
     if (!m_AnimDown) {
-        // Extract the directory from the original sprite path
         std::string dir = m_SpritePath;
         size_t slash = dir.find_last_of("/\\");
         if (slash != std::string::npos)
@@ -326,32 +334,68 @@ void NPC::LoadSprites() {
         else
             dir.clear();
 
-        // Build a full path to the "Grant" sprite
         std::string fallbackBase = dir + "Grant";
         LOG_WARN("NPC missing sprites for '{}', falling back to '{}'", m_SpritePath, fallbackBase);
 
-        auto fallbackFrames = BuildWalkCycle(fallbackBase + "_Down"); // just try one direction
+        auto fallbackFrames = BuildWalkCycle(fallbackBase + "_Down");
         if (!fallbackFrames.empty()) {
             m_AnimDown  = std::make_shared<Util::Animation>(fallbackFrames, false, 150, true, 0);
             m_AnimUp    = m_AnimDown;
             m_AnimLeft  = m_AnimDown;
             m_AnimRight = m_AnimDown;
         } else {
-            LOG_ERROR("FATAL: Could not load fallback sprite '{}' either! NPC will be invisible.",
-                      fallbackBase);
+            LOG_ERROR("FATAL: Could not load fallback sprite '{}'!", fallbackBase);
         }
     }
 
-    // --- Initial drawable ---
     m_CurrentAnimation = m_AnimDown;
     m_Drawable = m_CurrentAnimation;
 }
 
 // ============================================================
-//  LoadDialogue — kept to satisfy the declaration in NPC.hpp.
-//  Dialogue is now loaded from JSON via SetDialogue(); this
-//  method is a no-op and can be removed once NPC.hpp is cleaned up.
+//  LoadDialogue (no-op, kept for interface)
 // ============================================================
-void NPC::LoadDialogue(const std::string& /*path*/, std::vector<std::string>& /*out*/) {
-    // Intentionally empty — dialogue comes from JSON, not flat files.
+void NPC::LoadDialogue(const std::string&, std::vector<std::string>&) {
+}
+
+// ============================================================
+//  Sight & Chase
+// ============================================================
+bool NPC::PlayerInSight(std::shared_ptr<Map> map) {
+    int px = map->GetPlayerGridX();
+    int py = map->GetPlayerGridY();
+
+    int nx = m_GridX, ny = m_GridY;
+    switch (m_SightDirection) {
+        case Direction::UP:    return (px == nx && py < ny && py >= ny - m_SightRange);
+        case Direction::DOWN:  return (px == nx && py > ny && py <= ny + m_SightRange);
+        case Direction::LEFT:  return (py == ny && px < nx && px >= nx - m_SightRange);
+        case Direction::RIGHT: return (py == ny && px > nx && px <= nx + m_SightRange);
+    }
+    return false;
+}
+
+glm::vec2 NPC::ChasePlayer(std::shared_ptr<Map> map) {
+    int dx = m_PlayerTargetX - m_GridX;
+    int dy = m_PlayerTargetY - m_GridY;
+
+    // If already adjacent, make sure any in‑progress step is finished first
+    if (std::abs(dx) <= 1 && std::abs(dy) <= 1 && !(dx == 0 && dy == 0)) {
+        // Finish any in‑progress tile movement
+        while (m_IsMoving) {
+            Character::Update(map);
+        }
+
+        m_Chasing = false;
+        m_Triggered = true;
+        map->TriggerInteraction(this);
+        return m_Transform.translation;
+    }
+
+    // Move one step towards the player
+    int stepX = (dx > 0) ? 1 : (dx < 0) ? -1 : 0;
+    int stepY = (dy > 0) ? 1 : (dy < 0) ? -1 : 0;
+
+    TryMoveInDirection(stepX, stepY, map);
+    return m_Transform.translation;
 }

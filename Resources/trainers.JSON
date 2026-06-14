@@ -32,10 +32,17 @@
         { "species": "Rattata", "level": 3 }
       ]
     },
-            "Grunt2": {
+        "Grunt2": {
       "name": "Grunt",
       "party": [
         { "species": "Voltorb", "level": 5 }
+      ]
+    },
+        "Boss1": {
+      "name": "Grunt",
+      "party": [
+        { "species": "Gastly", "level": 7 },
+        { "species": "PaldeanWooper", "level": 7 }
       ]
     }
   }

@@ -789,6 +789,42 @@
           }
         ]
       }
-    }
+    },
+    {
+  "id": 128,
+  "texture": "EvilBoss",
+  "visualOffsetY": -12.0,
+  "zIndex": 0.8,
+  "dynamicZ": true,
+  "action": "BATTLE",
+  "actionData": "Boss1",
+  "itemCategory": "GENERAL",
+  "flagOnInteract": "fight_boss1",
+  "flagToHide": "fight_boss1",
+  "facing": "Right",              
+  "sightRange": 4,                  
+  "sightDirection": "Right",            
+  "movement": {
+    "type": "STILL",
+    "moveInterval": 1.8,
+    "wanderRadius": 1,
+    "patrolPoints": []
+  },
+  "dialogue": {
+    "default": [
+      "What are you doing here",
+      "You think you can stop us?",
+      "Let's see you try"
+    ],
+    "flags": [
+      {
+        "condition": "fight_boss1",
+        "lines": [
+          "Hmm you're pretty strong"
+        ]
+      }
+    ]
+  }
+}
   ]
 }

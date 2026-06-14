@@ -260,6 +260,9 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         props.flagToHide     = entry.value("flagToHide",    "");
         props.flagRequired = entry.value("flagRequired", "");
         props.visible      = entry.value("visible",       true);
+        // ── Sight (trainer‑spotting) ──────────────────────────────
+        props.sightRange     = entry.value("sightRange", 0);
+        props.sightDirection = entry.value("sightDirection", "Down");
         props.rewardMoney  = entry.value("rewardMoney", 0);
         if (entry.contains("reward") && entry["reward"].is_object()) {
             props.reward.itemName = entry["reward"].value("itemName", "");
@@ -444,6 +447,7 @@ void Map::SpawnTilesAndProps() {
 
                 npc->SetGridPosition(x, y);
                 npc->SetSpawnPoint(x, y);
+                npc->SetVisualOffsetY(npcProps.visualOffsetY * GameConfig::SCALE / 3.0f);
                 static const std::unordered_map<std::string, Character::Direction> facingMap = {
                     {"Down",  Character::Direction::DOWN},
                     {"Up",    Character::Direction::UP},
@@ -458,7 +462,9 @@ void Map::SpawnTilesAndProps() {
                 npc->SetReward(npcProps.reward.itemName, npcProps.reward.quantity);
                 npc->SetRewardMoney(npcProps.rewardMoney);
             
-
+                if (npcProps.sightRange > 0) {
+                    npc->SetSight(npcProps.sightRange, npcProps.sightDirection);
+                }
                 // Inline dialogue – data comes straight from the registry
                 npc->SetDialogue(npcProps.defaultDialogue, npcProps.conditionalDialogue);
 
@@ -643,6 +649,7 @@ void Map::WarpTo(int gridX, int gridY) {
     float shiftY = GameConfig::CAMERA_START_Y - (gridY * GameConfig::EFFECTIVE_TILE_SIZE);
     Move(-shiftX, -shiftY);
     SetPlayerGridPosition(gridX,gridY);
+    //player->SnapToGrid();
 }
 
 bool Map::IsWalkable(int x, int y) {
@@ -797,4 +804,45 @@ void Map::SetVisible(bool visible) {
 
 void Map::Draw() {
     // Intentionally empty — the Renderer handles all drawing.
+}
+
+void Map::StartNPCTrainerApproach(NPC* npc, int targetX, int targetY) {
+    m_NPCApproachActive = true;
+    m_ApproachNPC = npc;   // remember who's chasing
+    if (auto player = GetPlayer()) {
+        player->SetLocked(true);
+    }
+    for (auto& other : m_NPCs) {
+        if (other.get() != npc) other->SetLocked(true);
+    }
+    npc->SetChaseTarget(targetX, targetY);
+}
+
+void Map::EndNPCTrainerApproach() {
+    m_NPCApproachActive = false;
+    m_ApproachNPC = nullptr;
+    if (auto player = GetPlayer()) player->SetLocked(false);
+    for (auto& npc : m_NPCs) npc->SetLocked(false);
+}
+
+void Map::InitiateBattleWithNPC(NPC* npc) {
+    if (m_BattleCallback) {
+        m_BattleCallback(npc);
+    } else {
+        LOG_WARN("Map::InitiateBattleWithNPC - no battle callback set");
+    }
+}
+
+void Map::TriggerInteraction(NPC* npc) {
+    if (m_InteractionCallback) {
+        m_InteractionCallback(npc);
+    } else {
+        LOG_WARN("Map::TriggerInteraction - no interaction callback set");
+    }
+}
+
+void Map::UpdateApproachTarget() {
+    if (m_ApproachNPC && m_NPCApproachActive && GetPlayer()) {
+        m_ApproachNPC->SetChaseTarget(GetPlayerGridX(), GetPlayerGridY());
+    }
 }

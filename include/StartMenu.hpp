@@ -20,7 +20,7 @@ public:
     struct Item {
         std::string label;
         Option      value;
-        std::string iconPath;   // optional – path to small icon
+        std::string iconPath = "";
     };
 
     explicit StartMenu(std::shared_ptr<Util::Renderer> renderer);

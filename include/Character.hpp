@@ -75,6 +75,7 @@ public:
         }
         return false;
     }
+    void SnapToGrid();
 
 protected:
     // The Backpack

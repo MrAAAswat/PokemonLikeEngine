@@ -179,3 +179,13 @@ void Character::PrintInventory() const {
     }
     LOG_INFO("------------------------");
 }
+
+void Character::SnapToGrid() {
+    // Compute the visual Y offset that is currently applied
+    float offsetY = m_Transform.translation.y - (GameConfig::CAMERA_START_Y - m_GridY * GameConfig::EFFECTIVE_TILE_SIZE);
+    
+    float worldX = GameConfig::CAMERA_START_X + m_GridX * GameConfig::EFFECTIVE_TILE_SIZE;
+    float worldY = GameConfig::CAMERA_START_Y - m_GridY * GameConfig::EFFECTIVE_TILE_SIZE + offsetY;
+    
+    m_Transform.translation = { worldX, worldY };
+}

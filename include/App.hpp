@@ -64,8 +64,8 @@ private:
     State m_CurrentState = State::START;
     bool m_JustFinishedMoving = false;
     std::shared_ptr<Player> m_Character;
-    std::shared_ptr<NPC> m_ActiveNPC = nullptr;
-
+    //std::shared_ptr<NPC> m_ActiveNPC = nullptr;
+    NPC* m_ActiveNPC = nullptr;
     // --- Your UI components ---
     std::shared_ptr<Util::GameObject> m_DialogueUI;
     std::shared_ptr<Util::Text> m_DialogueText;

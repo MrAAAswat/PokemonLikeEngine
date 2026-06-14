@@ -1,4 +1,5 @@
 #include "Player.hpp"
+#include "GameConfig.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Map.hpp"
@@ -121,6 +122,22 @@ void Player::HandleInput(std::shared_ptr<Map> map) {
 }
 
 glm::vec2 Player::Update(std::shared_ptr<Map> map) {
+    if (m_Locked) {
+        if (m_IsMoving) {
+            bool wasMoving = m_IsMoving;
+            glm::vec2 movement = Character::Update(map);
+            m_State = State::IDLE;
+            //m_Transform.translation += movement;
+            // If we just finished the step, update the NPC target
+            if (wasMoving && !m_IsMoving) {
+                map->UpdateApproachTarget();
+            }
+            UpdateSprite();
+            return movement;
+        }
+        UpdateSprite();
+        return glm::vec2(0.0f, 0.0f);
+    }
     HandleInput(map);
     
     // Snapshot moving state BEFORE the base update runs
@@ -168,4 +185,9 @@ void Player::UpdateSprite() {
         m_CurrentAnimation->Pause();
         m_CurrentAnimation->SetCurrentFrame(0);
     }
+}
+void Player::SnapToGrid() {
+    float worldX = GameConfig::CAMERA_START_X + (m_GridX * GameConfig::EFFECTIVE_TILE_SIZE);
+    float worldY = GameConfig::CAMERA_START_Y - (m_GridY * GameConfig::EFFECTIVE_TILE_SIZE) + m_VisualOffsetY;
+    m_Transform.translation = { worldX, worldY };
 }

@@ -2,12 +2,14 @@
 #define NPC_HPP
 
 #include "Character.hpp"
-#include "Player.hpp"
+#include "Player.hpp"          // for Player::SetLocked / StopMoving
 #include "Item.hpp"
+#include "ShopData.hpp"
+
 #include <string>
 #include <vector>
-#include <utility> 
-#include "ShopData.hpp" 
+#include <utility>
+#include <memory>              // for std::shared_ptr
 
 // ============================================================
 //  NPCAction — what happens after dialogue closes
@@ -78,11 +80,20 @@ public:
     void SetFlagToHide(const std::string& flag) { m_FlagToHide = flag; }
     const std::string& GetFlagToHide() const { return m_FlagToHide; }
 
+    // --- Sight & Chase ---
+    void SetSight(int range, const std::string& facing);
+    bool PlayerInSight(std::shared_ptr<Map> map);
+    glm::vec2 ChasePlayer(std::shared_ptr<Map> map);
+    void SetChaseTarget(int x, int y) { m_PlayerTargetX = x; m_PlayerTargetY = y; }
+
+    // Helper to convert string to Direction
+    static Character::Direction StringToDirection(const std::string& s);
+
     // Shop
     void SetShopItems(const std::vector<ShopItem>& items) { m_ShopItems = items; }
     const std::vector<ShopItem>& GetShopItems() const { return m_ShopItems; }
 
-    // ── NEW: Reward (post‑battle item) ─────────────────────────
+    // Reward (post‑battle item / money)
     void SetReward(const std::string& itemName, int qty) {
         m_RewardItemName = itemName;
         m_RewardQty      = qty;
@@ -90,32 +101,46 @@ public:
     void SetRewardMoney(int money) { m_RewardMoney = money; }
     std::string GetRewardItemName() const { return m_RewardItemName; }
     int         GetRewardQuantity()  const { return m_RewardQty; }
-    int GetRewardMoney() const { return m_RewardMoney; }
+    int         GetRewardMoney()     const { return m_RewardMoney; }
 
     bool IsActive() const;
     void SetRequiredFlag(const std::string& flag) { m_FlagRequired = flag; }
     void SetAlwaysVisible(bool visible) { m_IsVisibleFromConfig = visible; }
+    void SetVisualOffsetY(float offset) { m_VisualOffsetY = offset; }
+
 protected:
     void LoadSprites() override;
 
+    // Sight data
+    bool      m_HasSight      = false;
+    int       m_SightRange    = 3;
+    Direction m_SightDirection = Direction::DOWN;
+
+    // Chase / trigger state
+    bool m_Chasing       = false;
+    bool m_Triggered     = false;
+    int  m_PlayerTargetX = -1;
+    int  m_PlayerTargetY = -1;
+
 private:
     std::string m_SpritePath;
-    bool m_IsVisibleFromConfig = true;
+    bool        m_IsVisibleFromConfig = true;
     std::vector<ShopItem> m_ShopItems;
 
     std::vector<std::string>      m_DefaultDialogue;
     std::vector<NPCDialogueEntry> m_ConditionalDialogue;
-    std::string                   m_FlagCondition;
+    std::string                   m_FlagCondition;   // unused, kept for legacy
 
     NPCAction    m_ActionType     = NPCAction::NONE;
     std::string  m_ActionData     = "";
     ItemCategory m_ActionCategory = ItemCategory::GENERAL;
-    std::string m_FlagRequired;
+    std::string  m_FlagRequired;
 
     MovementType m_MovementType = MovementType::STILL;
     bool         m_Locked       = false;
     float        m_MoveTimer    = 0.0f;
     float        m_MoveInterval = 2.0f;
+    float m_VisualOffsetY = 0.0f;
 
     int m_SpawnGridX = 0, m_SpawnGridY = 0;
     int m_WanderRadius = 3;
@@ -125,11 +150,10 @@ private:
     bool m_PatrolReverse = false;
 
     std::string m_RewardItemName;
-    int         m_RewardQty = 0;
-    int         m_RewardMoney    = 0;
+    int         m_RewardQty    = 0;
+    int         m_RewardMoney  = 0;
     std::string m_InteractFlag;
     std::string m_FlagToHide;
-
 
     // Helpers
     void LoadDialogue(const std::string& path, std::vector<std::string>& out);
@@ -141,4 +165,4 @@ private:
     void DoPatrol(std::shared_ptr<Map> map);
 };
 
-#endif
+#endif // NPC_HPP

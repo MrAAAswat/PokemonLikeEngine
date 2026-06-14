@@ -83,9 +83,30 @@ void App::InitSystems() {
     
     m_Renderer = std::make_shared<Util::Renderer>();
     m_Map = std::make_shared<Map>();
+    m_Map->SetInteractionCallback([this](NPC* npc) {
+        m_ActiveNPC = npc;
+        m_Character->StopMoving();
+        m_CurrentState = State::DIALOGUE;
+        m_DialogueBoxUI->SetVisible(true);
+        m_DialogueUI->SetVisible(true);
+
+        // Face the NPC toward the player
+        npc->FaceToward(m_Character->GetGridX(), m_Character->GetGridY());
+
+        // Get the dialogue lines
+        m_CurrentDialogueLines = npc->Interact(*m_Character);
+        m_CurrentDialogueIndex = 0;
+
+        if (!m_CurrentDialogueLines.empty()) {
+            m_DialogueText->SetText(m_CurrentDialogueLines[0]);
+            float textHalfWidth = m_DialogueText->GetSize().x / 2.0f;
+            m_DialogueUI->m_Transform.translation.x = -600.0f + textHalfWidth;
+        }
+    });
     m_Map->SetRenderer(m_Renderer); 
     m_PokemonMenu = std::make_shared<PokemonMenu>(m_Renderer);
     m_Character = std::make_shared<Player>(0.0f, 0.0f);
+    m_Map->SetPlayer(m_Character.get());
     m_Renderer->AddChild(m_Character); 
 
     m_BattleUI = std::make_shared<BattleUI>(m_Renderer);  
@@ -99,6 +120,19 @@ void App::InitSystems() {
     m_InventoryMenu = std::make_shared<InventoryMenu>(m_Renderer);
     m_BattleUI->SetInventoryMenu(m_InventoryMenu);
     m_BattleUI->SetPlayer(m_Character);
+    m_Map->SetBattleCallback([this](NPC* npc) {
+    m_PendingBattleFlag = npc->GetInteractFlag();
+    m_PendingRewardItem = npc->GetRewardItemName();
+    m_PendingRewardQty  = npc->GetRewardQuantity();
+    m_PendingRewardMoney = npc->GetRewardMoney();
+
+    m_Character->SetVisible(false);
+    m_Map->SetVisible(false);
+    m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npc->GetParty(), m_PendingBattleFlag);
+    m_CurrentState = State::BATTLE;
+    }
+        );
+    
 }
 
 void App::InitGameLoad() {
@@ -120,9 +154,9 @@ void App::InitGameLoad() {
         }
     } else {
         GameConfig::LootedItems.clear(); 
-        m_Map->LoadLevel(MAP_DIR + "StartTown"); 
-        m_Character->SetGridPosition(10, 10); 
-        m_Map->WarpTo(10, 10);
+        m_Map->LoadLevel(MAP_DIR + "PlayerHouse2F"); 
+        m_Character->SetGridPosition(3, 5); 
+        m_Map->WarpTo(3, 5);
         // Starter will be chosen via NPC interaction – no hardcoded Pokémon
     }
 }
@@ -199,6 +233,9 @@ void App::ProcessBattleState() {
 
         m_Map->SetVisible(true);
         m_Character->SetVisible(true);
+        if (m_Map->IsNPCTrainerApproachActive()) {
+            m_Map->EndNPCTrainerApproach();
+        }
         m_CurrentState = State::UPDATE;
     }
 }
@@ -267,7 +304,7 @@ void App::ProcessPokemonMenuState() {
         if (m_PokemonMenu->IsActionSelected()) {
             int selectedIdx = m_PokemonMenu->GetSelectedIndex();
             auto party = m_Character->GetParty();
-            if (selectedIdx >= 0 && selectedIdx < party.size() && party[selectedIdx]) {
+            if (selectedIdx >= 0 && selectedIdx < static_cast<int>(party.size()) && party[selectedIdx]){
                 LOG_TRACE("Opening preview for index %d.", selectedIdx);
                 m_PokemonMenu->ShowPreview(*party[selectedIdx]);
             }
@@ -336,7 +373,7 @@ void App::HandleOverworldInteraction(int checkX, int checkY) {
     }
 
     if (targetNPC) {
-        m_ActiveNPC = targetNPC;
+        m_ActiveNPC = targetNPC.get();;
         m_Character->StopMoving();
         m_CurrentState = State::DIALOGUE; 
         m_DialogueBoxUI->SetVisible(true);
