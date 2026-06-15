@@ -769,6 +769,8 @@
       "itemCategory": "GENERAL",
       "flagOnInteract": "fight_grunt2",
       "flagToHide": "fight_grunt2",
+      "sightRange": 4,  
+      "sightDirection": "Down", 
       "movement": {
         "type": "STILL",
         "moveInterval": 1.8,
@@ -784,7 +786,7 @@
           {
             "condition": "fight_grunt",
             "lines": [
-              "Hmm you're pretty strong"
+              "Hey how did you get in here?"
             ]
           }
         ]

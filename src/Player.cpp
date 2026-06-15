@@ -115,6 +115,10 @@ void Player::HandleInput(std::shared_ptr<Map> map) {
         m_SpeedMultiplier = m_IsRunning ? 2.0f : 1.0f;  // <-- speed injected here
         m_CurrentDirection = {dx, dy};
         TryMove(dx, dy, map);
+        if (!m_IsMoving) {
+            m_State = State::IDLE;
+            m_IsRunning = false;
+        }
     } else {
         m_State    = State::IDLE;
         m_IsRunning = false;
@@ -135,6 +139,7 @@ glm::vec2 Player::Update(std::shared_ptr<Map> map) {
             UpdateSprite();
             return movement;
         }
+        m_IsRunning = false;
         UpdateSprite();
         return glm::vec2(0.0f, 0.0f);
     }

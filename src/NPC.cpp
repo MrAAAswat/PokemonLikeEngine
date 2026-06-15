@@ -62,8 +62,17 @@ bool NPC::IsActive() const {
 //  Update
 // ============================================================
 glm::vec2 NPC::Update(std::shared_ptr<Map> map) {
-    // Locked NPCs (during dialogue or cutscenes) do not move.
-    if (m_Locked) return glm::vec2(0.0f, 0.0f); 
+        // 1. Locked NPCs do nothing
+    if (m_Locked) return glm::vec2(0.0f, 0.0f);
+
+    // 2. If the NPC should be hidden (flag set or config), make it invisible and STOP all logic
+    if (!IsActive() || !m_IsVisibleFromConfig) {
+        SetVisible(false);
+        return glm::vec2(0.0f, 0.0f);
+    }
+
+    // 3. Otherwise it's active – keep it visible
+    SetVisible(true);
 
     // If chasing but mid‑step, finish the current tile first
     if (m_Chasing && m_IsMoving) {
@@ -379,15 +388,13 @@ glm::vec2 NPC::ChasePlayer(std::shared_ptr<Map> map) {
     int dx = m_PlayerTargetX - m_GridX;
     int dy = m_PlayerTargetY - m_GridY;
 
-    // If already adjacent, make sure any in‑progress step is finished first
     if (std::abs(dx) <= 1 && std::abs(dy) <= 1 && !(dx == 0 && dy == 0)) {
-        // Finish any in‑progress tile movement
-        while (m_IsMoving) {
+        while (m_IsMoving) {          // finish the last tile
             Character::Update(map);
         }
-
         m_Chasing = false;
         m_Triggered = true;
+        m_State = State::IDLE;
         map->TriggerInteraction(this);
         return m_Transform.translation;
     }
