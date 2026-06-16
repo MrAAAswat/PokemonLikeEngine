@@ -85,6 +85,11 @@ private:
     std::shared_ptr<Pokemon> m_StarterToGive;
     std::string m_PendingStarterSpecies;
 
+    std::string m_LastHealMapPath;
+    int         m_LastHealX = -1;
+    int         m_LastHealY = -1;
+    bool        m_HasHealLocation = false;
+
     // ==========================================
     // RESTRUCTURING HELPER FUNCTIONS
     // ==========================================

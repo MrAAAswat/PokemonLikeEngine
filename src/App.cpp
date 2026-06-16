@@ -152,11 +152,16 @@ void App::InitGameLoad() {
         for (const auto& pkmn : loadedState.party) {
             m_Character->AddPokemon(pkmn);
         }
+        m_LastHealMapPath = loadedState.lastHealMapPath;
+        m_LastHealX       = loadedState.lastHealX;
+        m_LastHealY       = loadedState.lastHealY;
     } else {
         GameConfig::LootedItems.clear(); 
         m_Map->LoadLevel(MAP_DIR + "PlayerHouse2F"); 
         m_Character->SetGridPosition(3, 5); 
         m_Map->WarpTo(3, 5);
+        m_LastHealMapPath = "";
+        m_LastHealX = m_LastHealY = -1;
         // Starter will be chosen via NPC interaction – no hardcoded Pokémon
     }
 }
@@ -196,6 +201,9 @@ void App::PerformQuickSave() {
     current.inventory = m_Character->GetInventory();
     current.lootedItems = GameConfig::LootedItems;
     current.party = m_Character->GetParty();
+    current.lastHealMapPath = m_LastHealMapPath;
+    current.lastHealX       = m_LastHealX;
+    current.lastHealY       = m_LastHealY;
     
     SaveSystem::SaveGame(current);
     LOG_TRACE("Game Saved Successfully!");
@@ -208,36 +216,86 @@ void App::PerformQuickSave() {
 void App::ProcessBattleState() {
     m_BattleUI->Update();
 
-    if (m_BattleUI->IsBattleOver() || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
-        if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) m_BattleUI->Hide();
+    if (!m_BattleUI->IsBattleOver() && !Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+        return;   // Battle still ongoing – nothing to do
+    }
 
-        if (m_BattleUI->PlayerWon() && !m_PendingBattleFlag.empty()) {
-            std::string rewardFlag = m_PendingBattleFlag + "_rewarded";
-            if (!GameFlags::Get(rewardFlag)) {
-                if (!m_PendingRewardItem.empty()) {
-                    m_Character->AddItem(m_PendingRewardItem, ItemCategory::GENERAL, m_PendingRewardQty);
-                    LOG_INFO("Received {} x{} as battle reward.", m_PendingRewardItem, m_PendingRewardQty);
-                }
-                if (m_PendingRewardMoney > 0) {
-                    m_Character->AddMoney(m_PendingRewardMoney);
-                    LOG_INFO("Received ${} as battle reward.", m_PendingRewardMoney);
-                }
-                GameFlags::Set(rewardFlag, true);
+    // If the player forced an exit via ESC, hide the battle UI
+    if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+        m_BattleUI->Hide();
+    }
+
+    // ----- 1. HANDLE REWARDS (player win) -----
+    if (m_BattleUI->PlayerWon() && !m_PendingBattleFlag.empty()) {
+        std::string rewardFlag = m_PendingBattleFlag + "_rewarded";
+        if (!GameFlags::Get(rewardFlag)) {
+            if (!m_PendingRewardItem.empty()) {
+                m_Character->AddItem(m_PendingRewardItem, ItemCategory::GENERAL, m_PendingRewardQty);
+                LOG_INFO("Received {} x{} as battle reward.", m_PendingRewardItem, m_PendingRewardQty);
+            }
+            if (m_PendingRewardMoney > 0) {
+                m_Character->AddMoney(m_PendingRewardMoney);
+                LOG_INFO("Received ${} as battle reward.", m_PendingRewardMoney);
+            }
+            GameFlags::Set(rewardFlag, true);
+        }
+    }
+
+    // ----- 2. HANDLE WHITE‑OUT (all Pokémon fainted) -----
+    if (!m_BattleUI->PlayerWon()) {
+        bool allFainted = true;
+        for (auto& p : m_Character->GetParty()) {
+            if (p && !p->IsFainted()) {
+                allFainted = false;
+                break;
             }
         }
 
-        m_PendingBattleFlag.clear();
-        m_PendingRewardItem.clear();
-        m_PendingRewardQty = 0;
-        m_PendingRewardMoney = 0;
+        if (allFainted) {
+            // Heal the entire party
+            for (auto& p : m_Character->GetParty()) {
+                if (p) {
+                    p->SetCurrentHP(p->GetMaxHP());
+                    // Future: clear any status conditions here
+                }
+            }
 
-        m_Map->SetVisible(true);
-        m_Character->SetVisible(true);
-        if (m_Map->IsNPCTrainerApproachActive()) {
-            m_Map->EndNPCTrainerApproach();
+            // Teleport to the last healing centre (or default starter house)
+            if (!m_LastHealMapPath.empty()) {
+                m_Map->LoadLevel(m_LastHealMapPath);
+                m_Character->SetGridPosition(m_LastHealX, m_LastHealY);
+                m_Map->WarpTo(m_LastHealX, m_LastHealY);
+            } else {
+                // No healing centre visited yet → default player’s house
+                m_Map->LoadLevel(MAP_DIR + "PlayerHouse2F");
+                m_Character->SetGridPosition(3, 5);
+                m_Map->WarpTo(3, 5);
+            }
+
+            // Clear any leftover interaction state from before the battle
+            m_ActiveNPC = nullptr;
+            m_CurrentDialogueLines.clear();
+            m_Map->SetPaused(false);
+
+            // Reset the player’s facing direction
+            m_Character->SetDirection(Character::Direction::DOWN);
         }
-        m_CurrentState = State::UPDATE;
     }
+
+    // ----- 3. CLEANUP AND RETURN TO OVERWORLD -----
+    m_PendingBattleFlag.clear();
+    m_PendingRewardItem.clear();
+    m_PendingRewardQty = 0;
+    m_PendingRewardMoney = 0;
+
+    m_Map->SetVisible(true);
+    m_Character->SetVisible(true);
+
+    if (m_Map->IsNPCTrainerApproachActive()) {
+        m_Map->EndNPCTrainerApproach();
+    }
+
+    m_CurrentState = State::UPDATE;
 }
 
 void App::ProcessStartMenuState() {
@@ -509,13 +567,19 @@ void App::ReturnToStartMenu() {
 }
 
 std::shared_ptr<Pokemon> App::GenerateWildPokemon(const std::string& mapPath) {
-    auto it = RandomEncounters::MapEncounters.find(mapPath);
-    if (it == RandomEncounters::MapEncounters.end()) {
-        return PokemonDatabase::CreatePokemon("Rattata", 2); 
+    std::string mapKey = mapPath;
+    auto idx = mapPath.find("Resources/");
+    if (idx != std::string::npos)
+        mapKey = mapPath.substr(idx);
+
+    auto it = RandomEncounters::GetMapEncounters().find(mapKey);
+    if (it == RandomEncounters::GetMapEncounters().end()) {
+        return PokemonDatabase::CreatePokemon("Rattata", 2);
     }
 
     const auto& encounterList = it->second;
     int totalWeight = 0;
+
     for (const auto& entry : encounterList) {
         totalWeight += entry.weight;
     }
@@ -686,9 +750,14 @@ void App::ProcessDialogueState() {
     m_ActiveNPC = nullptr;
 
     switch (action) {
+
         case NPCAction::HEAL: {
             for (auto& pokemon : m_Character->GetParty())
                 if (pokemon) pokemon->SetCurrentHP(pokemon->GetMaxHP());
+            m_LastHealMapPath = m_Map->GetCurrentLevelPath();
+            m_LastHealX       = m_Character->GetGridX();
+            m_LastHealY       = m_Character->GetGridY();
+            m_HasHealLocation = true;
             if (!flag.empty()) GameFlags::Set(flag, true);
             m_CurrentState = State::UPDATE;
             break;

@@ -3753,6 +3753,75 @@
         { "level": 25, "move": "Double-Edge" }
       ],
       "sprite": "paldeanwooper"
-    }
+    },
+    {
+  "id": 203,
+  "name": "Starly",
+  "type1": "NORMAL",
+  "type2": "FLYING",
+  "baseHP": 40,
+  "baseAttack": 55,
+  "baseDefense": 30,
+  "baseSpAtk": 30,
+  "baseSpDef": 30,
+  "baseSpeed": 60,
+  "catchRate": 255,
+  "baseExp": 49,
+  "moves": [
+    { "level": 1, "move": "Tackle" },
+    { "level": 1, "move": "Growl" },
+    { "level": 5, "move": "Quick Attack" },
+    { "level": 9, "move": "Wing Attack" }
+  ],
+  "sprite": "starly"
+},
+{
+  "id": 204,
+  "name": "Staravia",
+  "type1": "NORMAL",
+  "type2": "FLYING",
+  "baseHP": 55,
+  "baseAttack": 75,
+  "baseDefense": 50,
+  "baseSpAtk": 40,
+  "baseSpDef": 40,
+  "baseSpeed": 80,
+  "catchRate": 120,
+  "baseExp": 113,
+  "moves": [
+    { "level": 1, "move": "Tackle" },
+    { "level": 1, "move": "Growl" },
+    { "level": 5, "move": "Quick Attack" },
+    { "level": 9, "move": "Wing Attack" },
+    { "level": 13, "move": "Double Team" },
+    { "level": 18, "move": "Endeavor" }
+  ],
+  "sprite": "staravia"
+},
+  {
+    "id": 205,
+    "name": "Staraptor",
+    "type1": "NORMAL",
+    "type2": "FLYING",
+    "baseHP": 85,
+    "baseAttack": 120,
+    "baseDefense": 70,
+    "baseSpAtk": 50,
+    "baseSpDef": 60,
+    "baseSpeed": 100,
+    "catchRate": 45,
+    "baseExp": 172,
+    "moves": [
+      { "level": 1, "move": "Tackle" },
+      { "level": 1, "move": "Growl" },
+      { "level": 5, "move": "Quick Attack" },
+      { "level": 9, "move": "Wing Attack" },
+      { "level": 13, "move": "Double Team" },
+      { "level": 18, "move": "Endeavor" },
+      { "level": 23, "move": "Close Combat" },
+      { "level": 28, "move": "Brave Bird" }
+    ],
+    "sprite": "staraptor"
+  }
   ]
 }

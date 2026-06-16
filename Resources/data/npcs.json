@@ -793,40 +793,150 @@
       }
     },
     {
-  "id": 128,
-  "texture": "EvilBoss",
-  "visualOffsetY": -12.0,
-  "zIndex": 0.8,
-  "dynamicZ": true,
-  "action": "BATTLE",
-  "actionData": "Boss1",
-  "itemCategory": "GENERAL",
-  "flagOnInteract": "fight_boss1",
-  "flagToHide": "fight_boss1",
-  "facing": "Right",              
-  "sightRange": 4,                  
-  "sightDirection": "Right",            
-  "movement": {
-    "type": "STILL",
-    "moveInterval": 1.8,
-    "wanderRadius": 1,
-    "patrolPoints": []
-  },
-  "dialogue": {
-    "default": [
-      "What are you doing here",
-      "You think you can stop us?",
-      "Let's see you try"
-    ],
-    "flags": [
-      {
-        "condition": "fight_boss1",
-        "lines": [
-          "Hmm you're pretty strong"
+      "id": 128,
+      "texture": "EvilBoss",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "Boss1",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "fight_boss1",
+      "flagToHide": "fight_boss1",
+      "facing": "Right",              
+      "sightRange": 4,                  
+      "sightDirection": "Right",            
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "What are you doing here",
+          "You think you can stop us?",
+          "Let's see you try"
+        ],
+        "flags": [
+          {
+            "condition": "fight_boss1",
+            "lines": [
+              "Hmm you're pretty strong"
+            ]
+          }
         ]
       }
-    ]
-  }
-}
+    },
+    {
+      "id": 129,
+      "texture": "Sign",
+      "visualOffsetY": -8.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "NONE",
+      "actionData": "",
+      "itemCategory": "GENERAL",
+      "facing": "Down",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Leaving Starter Town",
+          "Careful for the road ahead"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 130,
+      "texture": "BaldingGuy",
+      "visualOffsetY": -8.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "NONE",
+      "facing": "Up",
+      "actionData": "",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "flagToHide": "chosen_starter",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 3.5,
+        "wanderRadius": 2,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! you don't have a Pokemon",
+          "The Tall grass is dangerous"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 131,
+      "texture": "SnorLacking",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "SnorLacking",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "SnorLacking",
+      "flagToHide": "SnorLacking",
+      "sightRange": 4,  
+      "sightDirection": "UP", 
+      "movement": {
+        "type": "LOOK_AROUND",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "SnorLax"
+        ],
+        "flags": [
+          {
+            "condition": "fight_grunt",
+            "lines": [
+              "Hey how did you get in here?"
+            ]
+          }
+        ]
+      }
+    },
+        {
+      "id": 132,
+      "texture": "Grunt",
+      "visualOffsetY": -8.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "NONE",
+      "facing": "Down",
+      "actionData": "",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "",
+      "flagToHide": "fight_boss1",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 3.5,
+        "wanderRadius": 2,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! what are you looking at?",
+          "We control this town, and stay away from that wooden house"
+        ],
+        "flags": []
+      }
+    }
   ]
 }

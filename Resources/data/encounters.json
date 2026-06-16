@@ -1,0 +1,17 @@
+  {
+    "encounters": {
+      "Resources/maps/level": [
+        { "species": "Starly",         "minLevel": 2, "maxLevel": 4, "weight": 50 },
+        { "species": "Rattata",        "minLevel": 2, "maxLevel": 4, "weight": 40 },
+        { "species": "Pikachu",        "minLevel": 3, "maxLevel": 5, "weight": 10 },
+        { "species": "PaldeanWooper",  "minLevel": 3, "maxLevel": 5, "weight": 50 }
+      ],
+      "Resources/maps/maze": [
+        { "species": "Bulbasaur",      "minLevel": 4, "maxLevel": 6, "weight": 20 },
+        { "species": "Starly",         "minLevel": 3, "maxLevel": 5, "weight": 80 }
+      ],
+      "Resources/maps/StartTown": [
+        { "species": "Starly",         "minLevel": 3, "maxLevel": 5, "weight": 80 }
+      ]
+    }
+  }

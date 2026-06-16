@@ -476,7 +476,7 @@
       "textures": ["Tree.png"],
       "zIndex": 0.801,
       "dynamicZ": true,
-      "walkable": true,
+      "walkable": false,
       "offsetX": 20.0,
       "offsetY": -16.0
     },

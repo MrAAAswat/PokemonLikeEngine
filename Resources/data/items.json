@@ -2,7 +2,7 @@
   "items": [
     {
       "id": 50,
-      "texture": "POTION.png",
+      "texture": "PokeBall.png",
       "shopTexture": "POTION.png",
       "name": "Potion",
       "category": "GENERAL",
@@ -22,7 +22,7 @@
     },
         {
       "id": 250,
-      "texture": "GREATBALL.png",
+      "texture": "PokeBall.png",
       "shopTexture": "GREATBALL.png",
       "name": "Greatball",
       "category": "POKEBALLS",
@@ -32,7 +32,7 @@
     },
     {
   "id": 251,
-  "texture": "MASTERBALL.png",
+  "texture": "PokeBall.png",
   "shopTexture": "MASTERBALL.png",
   "name": "Ultraball",
   "category": "POKEBALLS",
@@ -42,7 +42,7 @@
 },
 {
   "id": 252,
-  "texture": "ULTRABALL.png",
+  "texture": "PokeBall.png",
   "shopTexture": "ULTRABALL.png",
   "name": "Masterball",
   "category": "POKEBALLS",

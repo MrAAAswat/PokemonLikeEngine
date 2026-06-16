@@ -44,6 +44,12 @@
         { "species": "Gastly", "level": 7 },
         { "species": "PaldeanWooper", "level": 7 }
       ]
+    },
+            "SnorLacking": {
+      "name": "Snorlax",
+      "party": [
+        { "species": "Snorlax", "level": 5 }
+      ]
     }
   }
 }
