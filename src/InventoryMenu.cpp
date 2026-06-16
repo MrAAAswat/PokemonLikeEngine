@@ -209,9 +209,9 @@ void InventoryMenu::UpdatePreviewImage() {
     // 2. Resilient Fallback (If getProps is null or path is empty)
     if (!img) {
         std::vector<std::string> fallbacks = {
-            RESOURCE_DIR "/Items/" + itemName + ".png",
+            RESOURCE_DIR "/items/" + itemName + ".png",
             RESOURCE_DIR "/UI/" + itemName + ".png",
-            RESOURCE_DIR "/Items/" + itemName + ".PNG",
+            RESOURCE_DIR "/items/" + itemName + ".PNG",
             RESOURCE_DIR "/UI/" + itemName + ".PNG"
         };
         for (const auto& p : fallbacks) {

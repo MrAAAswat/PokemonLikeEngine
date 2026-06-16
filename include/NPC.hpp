@@ -94,10 +94,11 @@ public:
     const std::vector<ShopItem>& GetShopItems() const { return m_ShopItems; }
 
     // Reward (post‑battle item / money)
-    void SetReward(const std::string& itemName, int qty) {
-        m_RewardItemName = itemName;
-        m_RewardQty      = qty;
-    }
+    void SetReward(const std::string& itemName, int qty, ItemCategory cat) {
+    m_RewardItemName = itemName;
+    m_RewardQty      = qty;
+    m_RewardItemCategory = cat;
+}
     void SetRewardMoney(int money) { m_RewardMoney = money; }
     std::string GetRewardItemName() const { return m_RewardItemName; }
     int         GetRewardQuantity()  const { return m_RewardQty; }
@@ -107,6 +108,10 @@ public:
     void SetRequiredFlag(const std::string& flag) { m_FlagRequired = flag; }
     void SetAlwaysVisible(bool visible) { m_IsVisibleFromConfig = visible; }
     void SetVisualOffsetY(float offset) { m_VisualOffsetY = offset; }
+    void SetFlagToShow(const std::string& flag) { m_FlagToShow = flag; }
+    const std::string& GetFlagToShow() const { return m_FlagToShow; }
+    void SetRewardItemCategory(ItemCategory cat) { m_RewardItemCategory = cat; }
+    ItemCategory GetRewardItemCategory() const { return m_RewardItemCategory; }
 
 protected:
     void LoadSprites() override;
@@ -135,6 +140,9 @@ private:
     std::string  m_ActionData     = "";
     ItemCategory m_ActionCategory = ItemCategory::GENERAL;
     std::string  m_FlagRequired;
+    std::string m_FlagToShow;
+    ItemCategory m_RewardItemCategory = ItemCategory::GENERAL;
+
 
     MovementType m_MovementType = MovementType::STILL;
     bool         m_Locked       = false;

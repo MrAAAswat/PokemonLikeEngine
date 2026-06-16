@@ -61,7 +61,7 @@
       "zIndex": 0.8,
       "dynamicZ": true,
       "action": "GIVE_ITEM",
-      "actionData": "Student Card",
+      "actionData": "StudentCard",
       "itemCategory": "KEY_ITEMS",
       "flagOnInteract": "",
       "movement": {
@@ -89,6 +89,11 @@
       "actionData": "Trainer_TA",
       "itemCategory": "GENERAL",
       "flagOnInteract": "met_ta1",
+      "rewardMoney": 2000,
+      "reward": {
+        "itemCategory": "KEY_ITEMS",
+        "itemName": "StudentCard"
+      },
       "movement": {
         "type": "STILL",
         "moveInterval": 1.8,
@@ -99,7 +104,7 @@
         "default": [
           "Hey! You there!",
           "Think you know your stuff?",
-          "Let's see what you've got — TA battle!"
+          "Let's see what you've got"
         ],
         "flags": [
           {
@@ -193,7 +198,7 @@
       "zIndex": 0.8,
       "dynamicZ": true,
       "action": "CHECK_ITEM",
-      "actionData": "Student Card",
+      "actionData": "StudentCard",
       "itemCategory": "KEY_ITEMS",
       "flagOnInteract": "roadblock_cleared",
       "flagToHide": "roadblock_cleared",
@@ -207,15 +212,17 @@
       },
       "dialogue": {
         "default": [
-          "Hold it right there.",
-          "This area is restricted to students only.",
+          "It's looking quite bad out here",
+          "Sorry I can't let you leave without proper identification",
           "Show me your Student Card!"
         ],
         "flags": [
           {
-            "condition": "roadblock_cleared",
+            "condition": "fight_boss1",
             "lines": [
-              "Card checks out. Go right ahead!"
+              "Hold it right there.",
+              "This area is restricted to students only.",
+              "Show me your Student Card!"
             ]
           }
         ]
@@ -403,10 +410,20 @@
       },
       "dialogue": {
         "default": [
+          "Doesn't look good over here",
+          "Do you want to head back?"
+        ]
+      },
+      "flags": [
+      {
+        "condition": "fight_boss1",
+        "lines": [
           "Hey! You there!",
           "Ready to go?"
         ]
       }
+    ]
+      
     },
 {
   "id": 115,
@@ -535,9 +552,9 @@
       "zIndex": 0.8,
       "dynamicZ": true,
       "action": "GIVE_ITEM",
-      "actionData": "Pokedex",
-      "itemCategory": "KEY_ITEMS",
-      "flagOnInteract": "received_pokedex",
+      "actionData": "PokeBall",
+      "itemCategory": "POKEBALLS",
+      "flagOnInteract": "received_firstPokeBalls",
       "movement": {
         "type": "STILL",
         "moveInterval": 0,
@@ -551,9 +568,9 @@
         ],
         "flags": [
           {
-            "condition": "received_pokedex",
+            "condition": "received_firstPokeBalls",
             "lines": [
-              "Go explore the tall grass outside!",
+              "You'll need more friends if you want to pass the tests ahead",
               "I'm sure you'll meet many new Pokémon."
             ]
           },
@@ -728,10 +745,18 @@
       },
       "dialogue": {
         "default": [
-          "Hey! You're visiting our town?",
-          "Have fun!"
+          "Hey are you new here? Be careful!",
+          "There are some dangerous men who took over the town"
         ],
-        "flags": []
+        "flags": [
+          {
+            "condition": "fight_boss1",
+            "lines": [
+              "Thank you for saving our town"
+            ]
+          }
+
+        ]
       }
     },
     {
@@ -752,10 +777,17 @@
       },
       "dialogue": {
         "default": [
-          "Hey! You're visiting our town?",
-          "Have fun!"
+          "Hey are you new here? Be careful!",
+          "There are some dangerous men who took over the town"
         ],
-        "flags": []
+        "flags": [
+            {
+            "condition": "fight_boss1",
+            "lines": [
+              "Thank you for saving our town"
+            ]
+          }
+        ]
       }
     },
     {
@@ -769,6 +801,7 @@
       "itemCategory": "GENERAL",
       "flagOnInteract": "fight_grunt2",
       "flagToHide": "fight_grunt2",
+      "rewardMoney": 700,
       "sightRange": 4,  
       "sightDirection": "Down", 
       "movement": {
@@ -803,6 +836,7 @@
       "itemCategory": "GENERAL",
       "flagOnInteract": "fight_boss1",
       "flagToHide": "fight_boss1",
+      "rewardMoney": 2000,
       "facing": "Right",              
       "sightRange": 4,                  
       "sightDirection": "Right",            
@@ -890,8 +924,7 @@
       "itemCategory": "GENERAL",
       "flagOnInteract": "SnorLacking",
       "flagToHide": "SnorLacking",
-      "sightRange": 4,  
-      "sightDirection": "UP", 
+      "facing": "Down",
       "movement": {
         "type": "LOOK_AROUND",
         "moveInterval": 1.8,
@@ -902,14 +935,7 @@
         "default": [
           "SnorLax"
         ],
-        "flags": [
-          {
-            "condition": "fight_grunt",
-            "lines": [
-              "Hey how did you get in here?"
-            ]
-          }
-        ]
+        "flags": []
       }
     },
         {
@@ -922,6 +948,7 @@
       "facing": "Down",
       "actionData": "",
       "itemCategory": "GENERAL",
+      "rewardMoney": 700,
       "flagOnInteract": "",
       "flagToHide": "fight_boss1",
       "movement": {
@@ -934,6 +961,34 @@
         "default": [
           "Hey! what are you looking at?",
           "We control this town, and stay away from that wooden house"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 133,
+      "texture": "Student2",
+      "visualOffsetY": -8.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "Gym1NPC",
+      "rewardMoney": 1000,
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "fight_GymNPC1",
+      "facing": "Left",
+      "sightRange": 4,  
+      "sightDirection": "Left", 
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.0,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey! Here to challenge our gym leader?",
+          "Fight me first!"
         ],
         "flags": []
       }

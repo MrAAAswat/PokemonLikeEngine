@@ -197,7 +197,7 @@ void Map::LoadItemsFromJSON(const std::string& path) {
 
         m_ItemRegistry[id] = {
             PROP_DIR + entry["texture"].get<std::string>(),
-            PROP_DIR + entry.value("shopTexture", ""),
+            RES + "/items/" + entry.value("shopTexture", ""),
             entry["name"].get<std::string>(),
             StringToCategory(entry.value("category", "GENERAL")),
             entry.value("zIndex", 0.5f),
@@ -258,6 +258,7 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         props.itemCategory   = StringToCategory(entry.value("itemCategory", "GENERAL"));
         props.flagOnInteract = entry.value("flagOnInteract","");
         props.flagToHide     = entry.value("flagToHide",    "");
+        props.flagToShow    = entry.value("flagToShow",    "");
         props.flagRequired = entry.value("flagRequired", "");
         props.visible      = entry.value("visible",       true);
         // ── Sight (trainer‑spotting) ──────────────────────────────
@@ -267,6 +268,8 @@ void Map::LoadNPCsFromJSON(const std::string& path) {
         if (entry.contains("reward") && entry["reward"].is_object()) {
             props.reward.itemName = entry["reward"].value("itemName", "");
             props.reward.quantity = entry["reward"].value("quantity", 1);
+            props.reward.category = StringToCategory(entry["reward"].value("itemCategory", "GENERAL"));
+
         }
         props.initialFacing = entry.value("facing", "Down");
         // ── Dialogue ────────────────────────────────────────────────────────
@@ -459,7 +462,7 @@ void Map::SpawnTilesAndProps() {
                 npc->SetZIndex(npcProps.zIndex);
                 npc->SetBaseZIndex(npcProps.zIndex);
                 npc->SetDynamicZ(npcProps.dynamicZ);
-                npc->SetReward(npcProps.reward.itemName, npcProps.reward.quantity);
+                npc->SetReward(npcProps.reward.itemName, npcProps.reward.quantity, npcProps.reward.category);
                 npc->SetRewardMoney(npcProps.rewardMoney);
             
                 if (npcProps.sightRange > 0) {
@@ -483,7 +486,11 @@ void Map::SpawnTilesAndProps() {
                     npc->AddPatrolPoint(point.gridX, point.gridY);
 
                 npc->SetInteractFlag(npcProps.flagOnInteract);
-                if (!npcProps.flagToHide.empty()) {
+
+                if (!npcProps.flagToShow.empty()) {
+                    npc->SetFlagToShow(npcProps.flagToShow);
+                    npc->SetVisible(GameFlags::Get(npcProps.flagToShow));
+                } else if (!npcProps.flagToHide.empty()) {
                     npc->SetFlagToHide(npcProps.flagToHide);
                     npc->SetVisible(!GameFlags::Get(npcProps.flagToHide));
                 }

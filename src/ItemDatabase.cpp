@@ -10,7 +10,7 @@ using json = nlohmann::json;    // <-- allow bare 'json'
 // If PROP_DIR is not defined anywhere, define it here.
 // It should match the folder where item textures are stored.
 #ifndef PROP_DIR
-#define PROP_DIR std::string(RESOURCE_DIR) + "/Items/"
+#define PROP_DIR std::string(RESOURCE_DIR) + "/items/"
 #endif
 
 void ItemDatabase::Load(const std::string& jsonPath) {

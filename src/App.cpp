@@ -121,15 +121,18 @@ void App::InitSystems() {
     m_BattleUI->SetInventoryMenu(m_InventoryMenu);
     m_BattleUI->SetPlayer(m_Character);
     m_Map->SetBattleCallback([this](NPC* npc) {
-    m_PendingBattleFlag = npc->GetInteractFlag();
-    m_PendingRewardItem = npc->GetRewardItemName();
-    m_PendingRewardQty  = npc->GetRewardQuantity();
-    m_PendingRewardMoney = npc->GetRewardMoney();
+        m_PendingBattleFlag = npc->GetInteractFlag();
+        m_PendingRewardItem = npc->GetRewardItemName();
+        m_PendingRewardQty  = npc->GetRewardQuantity();
+        m_PendingRewardCategory = npc->GetRewardItemCategory();
+        m_PendingRewardMoney = npc->GetRewardMoney();
+        m_PendingRewardCategory = m_ActiveNPC->GetRewardItemCategory();  // ← ADD THIS
 
-    m_Character->SetVisible(false);
-    m_Map->SetVisible(false);
-    m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npc->GetParty(), m_PendingBattleFlag);
-    m_CurrentState = State::BATTLE;
+
+        m_Character->SetVisible(false);
+        m_Map->SetVisible(false);
+        m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npc->GetParty(), m_PendingBattleFlag);
+        m_CurrentState = State::BATTLE;
     }
         );
     
@@ -225,21 +228,21 @@ void App::ProcessBattleState() {
         m_BattleUI->Hide();
     }
 
-    // ----- 1. HANDLE REWARDS (player win) -----
     if (m_BattleUI->PlayerWon() && !m_PendingBattleFlag.empty()) {
-        std::string rewardFlag = m_PendingBattleFlag + "_rewarded";
-        if (!GameFlags::Get(rewardFlag)) {
-            if (!m_PendingRewardItem.empty()) {
-                m_Character->AddItem(m_PendingRewardItem, ItemCategory::GENERAL, m_PendingRewardQty);
-                LOG_INFO("Received {} x{} as battle reward.", m_PendingRewardItem, m_PendingRewardQty);
+            std::string rewardFlag = m_PendingBattleFlag + "_rewarded";
+            if (!GameFlags::Get(rewardFlag)) {
+                if (!m_PendingRewardItem.empty()) {
+                    m_Character->AddItem(m_PendingRewardItem, m_PendingRewardCategory, m_PendingRewardQty);
+                    LOG_INFO("Received {} x{} (category {}) as battle reward.",
+                            m_PendingRewardItem, m_PendingRewardQty, static_cast<int>(m_PendingRewardCategory));
+                }
+                if (m_PendingRewardMoney > 0) {
+                    m_Character->AddMoney(m_PendingRewardMoney);
+                    LOG_INFO("Received ${} as battle reward.", m_PendingRewardMoney);
+                }
+                GameFlags::Set(rewardFlag, true);
             }
-            if (m_PendingRewardMoney > 0) {
-                m_Character->AddMoney(m_PendingRewardMoney);
-                LOG_INFO("Received ${} as battle reward.", m_PendingRewardMoney);
-            }
-            GameFlags::Set(rewardFlag, true);
         }
-    }
 
     // ----- 2. HANDLE WHITE‑OUT (all Pokémon fainted) -----
     if (!m_BattleUI->PlayerWon()) {
@@ -734,12 +737,15 @@ void App::ProcessDialogueState() {
     auto npcParty               = m_ActiveNPC->GetParty();
 
     std::string rewardItem;
+    ItemCategory itemType;
     int rewardQty = 0;
     int rewardMoney = 0;
     if (action == NPCAction::BATTLE) {
         rewardItem = m_ActiveNPC->GetRewardItemName();
         rewardQty  = m_ActiveNPC->GetRewardQuantity();
         rewardMoney  = m_ActiveNPC->GetRewardMoney(); 
+        itemType = m_ActiveNPC->GetRewardItemCategory(); 
+
     }
 
     std::vector<ShopItem> shopItems;
@@ -795,6 +801,7 @@ void App::ProcessDialogueState() {
             m_PendingRewardQty    = rewardQty;
             m_PendingRewardMoney = rewardMoney;
             m_PendingBattleFlag   = flag;
+            m_PendingRewardCategory = itemType;
 
             m_Character->SetVisible(false);
             m_Map->SetVisible(false);

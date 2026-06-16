@@ -79,7 +79,7 @@ private:
     int         m_PendingRewardQty   = 0;
     int         m_PendingRewardMoney = 0;
     std::string m_PendingBattleFlag;
-
+    ItemCategory m_PendingRewardCategory = ItemCategory::GENERAL;
     // NEW: Handles the in-dialogue starter selection
     bool m_PendingStarterConfirm = false;
     std::shared_ptr<Pokemon> m_StarterToGive;

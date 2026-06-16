@@ -52,6 +52,10 @@ void NPC::SetSight(int range, const std::string& facing) {
 //  Active state
 // ============================================================
 bool NPC::IsActive() const {
+    if (!m_FlagToShow.empty()) {
+        return GameFlags::Get(m_FlagToShow);
+    }
+    
     if (!m_FlagToHide.empty()) {
         return !GameFlags::Get(m_FlagToHide);
     }

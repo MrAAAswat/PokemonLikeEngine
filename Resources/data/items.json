@@ -31,34 +31,44 @@
       "sellPrice": 350
     },
     {
-  "id": 251,
-  "texture": "PokeBall.png",
-  "shopTexture": "MASTERBALL.png",
-  "name": "Ultraball",
-  "category": "POKEBALLS",
-  "zIndex": 0.5,
-  "buyPrice": 1200,
-  "sellPrice": 600
-},
-{
-  "id": 252,
-  "texture": "PokeBall.png",
-  "shopTexture": "ULTRABALL.png",
-  "name": "Masterball",
-  "category": "POKEBALLS",
-  "zIndex": 0.5,
-  "buyPrice": 5000,
-  "sellPrice": 2500
-},
-{
-  "id": 253,
-  "texture": "PokeBall.png",
-  "shopTexture": "SUPERPOTION.png",
-  "name": "Potion1",
-  "category": "GENERAL",
-  "zIndex": 0.5,
-  "buyPrice": 1500,
-  "sellPrice": 800
-}
+      "id": 251,
+      "texture": "PokeBall.png",
+      "shopTexture": "MASTERBALL.png",
+      "name": "Ultraball",
+      "category": "POKEBALLS",
+      "zIndex": 0.5,
+      "buyPrice": 1200,
+      "sellPrice": 600
+    },
+    {
+      "id": 252,
+      "texture": "PokeBall.png",
+      "shopTexture": "ULTRABALL.png",
+      "name": "Masterball",
+      "category": "POKEBALLS",
+      "zIndex": 0.5,
+      "buyPrice": 5000,
+      "sellPrice": 2500
+    },
+    {
+      "id": 253,
+      "texture": "PokeBall.png",
+      "shopTexture": "SUPERPOTION.png",
+      "name": "Potion1",
+      "category": "GENERAL",
+      "zIndex": 0.5,
+      "buyPrice": 1500,
+      "sellPrice": 800
+    },
+    {
+      "id": 254,
+      "texture": "PokeBall.png",
+      "shopTexture": "000.png",
+      "name": "StudentCard",
+      "category": "KEY_ITEMS",
+      "zIndex": 0.5,
+      "buyPrice": 1500,
+      "sellPrice": 800
+    }
   ]
 }

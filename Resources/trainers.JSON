@@ -10,7 +10,6 @@
         "Trainer_Student1": {
       "name": "Student1",
       "party": [
-        { "species": "Charizard", "level": 36 },
         { "species": "Totodile", "level": 6 }
       ]
     },
@@ -41,14 +40,20 @@
         "Boss1": {
       "name": "Grunt",
       "party": [
-        { "species": "Gastly", "level": 7 },
-        { "species": "PaldeanWooper", "level": 7 }
+        { "species": "Gastly", "level": 5 },
+        { "species": "PaldeanWooper", "level": 5 }
       ]
     },
-            "SnorLacking": {
+        "SnorLacking": {
       "name": "Snorlax",
       "party": [
         { "species": "Snorlax", "level": 5 }
+      ]
+    },
+        "Gym1NPC": {
+      "name": "Gym1NPC",
+      "party": [
+        { "species": "Starly", "level": 5 }
       ]
     }
   }
