@@ -735,135 +735,205 @@ bool BattleUI::Update() {
     // STATE 5: BAG MENU
     // ==========================================
     else if (m_UIState == UIState::BAG_MENU) {
-        if (m_InventoryMenu->Update()) {
-            m_InventoryMenu->Hide();
-            m_UIState     = UIState::MAIN_MENU;
-            m_CursorIndex = 1;
-            UpdateCursorPosition();
+        // Check Z BEFORE calling Update(), so the timer can't eat it
+        if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
+            std::string selectedItem = m_InventoryMenu->GetSelectedItem();
+            LOG_INFO("[BAG_MENU] Z pressed, selected: '{}'", selectedItem);
+            if (!selectedItem.empty() && IsUsableInBattle(selectedItem)) {
+                bool isPokeball = (selectedItem == "Pokeball" || 
+                                selectedItem == "Greatball" || 
+                                selectedItem == "Ultraball" ||
+                                selectedItem == "Masterball");
+                m_InventoryMenu->Hide();
+
+                if (isPokeball) {
+                    while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
+                    m_BattleLogic->UseItem(m_Player, nullptr, selectedItem);
+                    bool caught = (m_BattleLogic->GetState() == BattleManager::BattleState::BATTLE_WON);
+                    if (caught) {
+                        m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, true, m_EnemySprite);
+                        m_UIState = UIState::CATCH_ANIMATION;
+                    } else {
+                        auto& msgQueue = m_BattleLogic->m_MessageQueue;
+                        while (!msgQueue.empty()) {
+                            m_DialogueQueue.push(msgQueue.front());
+                            msgQueue.pop();
+                        }
+                        m_UIState = UIState::WAITING_TEXT;
+                        m_TextWaitTimer = 15;
+                        ProcessNextMessage();
+                    }
+                } else {
+                    m_PendingItem = selectedItem;
+                    m_IsTargetingForItem = true;
+                    m_PokemonMenu->Show(m_Player->GetParty());
+                    m_UIState = UIState::POKEMON_MENU;
+                }
+            }
             return true;
         }
 
-        if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
-            std::string  selectedItem = m_InventoryMenu->GetSelectedItem();
-            ItemCategory currentTab   = m_InventoryMenu->GetCurrentTab();
-
-            if (selectedItem.empty() || currentTab != ItemCategory::POKEBALLS) return true;
-
+        // Update handles navigation and X/ESC to close
+        if (m_InventoryMenu->Update()) {
             m_InventoryMenu->Hide();
-            while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
-
-            m_BattleLogic->UseItem(m_Player, selectedItem);
-            bool willSucceed = (m_BattleLogic->GetState() == BattleManager::BattleState::BATTLE_WON);
-
-            m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f},
-                                            willSucceed, m_EnemySprite);
-            m_DialogueQueue.push("You threw a " + selectedItem + "!");
-            ProcessNextMessage();
-            m_UIState = UIState::CATCH_ANIMATION;
+            m_UIState = UIState::MAIN_MENU;
+            m_CursorIndex = 1;
+            UpdateCursorPosition();
+            return true;
         }
     }
     // ==========================================
     // STATE 6: POKEMON MENU
     // ==========================================
     else if (m_UIState == UIState::POKEMON_MENU) {
-        if (m_PokemonMenu->Update()) {
-            if (m_PlayerPokemon->GetCurrentHP() <= 0) return true;
-            m_PokemonMenu->Hide();
-            m_UIState     = UIState::MAIN_MENU;
-            m_CursorIndex = 2;
-            UpdateCursorPosition();
-            SetDialogue("What will you do?");
-            return true;
-        }
+        bool menuDone = m_PokemonMenu->Update();
 
-        if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
-            int  selectedIdx = m_PokemonMenu->GetSelectedIndex();
-            auto party       = m_Player->GetParty();
+        if (menuDone) {
+            if (m_PokemonMenu->WasActionSelected()) {
+                // Z was pressed — handle selection
+                int selectedIdx = m_PokemonMenu->GetSelectedIndex();
+                auto party = m_Player->GetParty();
+                if (selectedIdx < 0 || selectedIdx >= static_cast<int>(party.size())) return true;
+                auto selectedPokemon = party[selectedIdx];
+                if (!selectedPokemon) return true;
 
-            if (selectedIdx < 0 || selectedIdx >= static_cast<int>(party.size())) return true;
+                if (m_IsTargetingForItem) {
+                    if (selectedPokemon->IsFainted()) {
+                        m_PokemonMenu->Hide();
+                        while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
+                        m_DialogueQueue.push(selectedPokemon->GetName() + " is fainted!");
+                        m_IsTargetingForItem = false;
+                        m_PendingItem.clear();
+                        m_UIState = UIState::WAITING_TEXT;
+                        m_TextWaitTimer = 15;
+                        ProcessNextMessage();
+                        return true;
+                    }
 
-            auto selectedPokemon = party[selectedIdx];
-            if (selectedPokemon->GetCurrentHP() <= 0) return true;
-            if (selectedPokemon == m_PlayerPokemon)   return true;
+                    m_PokemonMenu->Hide();
+                    while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
+                    m_BattleLogic->UseItem(m_Player, selectedPokemon, m_PendingItem);
 
-            m_PokemonMenu->Hide();
-            while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
+                    // Enemy gets a turn after item use
+                    if (m_BattleLogic->GetState() == BattleManager::BattleState::SELECTING_ACTION) {
+                        BattleManager::TurnResult enemyResult = m_BattleLogic->ExecuteEnemyMove();
+                        std::stringstream ss(enemyResult.message);
+                        std::string line;
+                        while (std::getline(ss, line, '\n'))
+                            if (!line.empty()) m_BattleLogic->m_MessageQueue.push(line);
+                    }
 
-            bool wasFainted = (m_PlayerPokemon->GetCurrentHP() <= 0);
-            if (wasFainted) {
-                m_DialogueQueue.push("Go! " + selectedPokemon->GetName() + "!");
-            } else {
-                m_DialogueQueue.push("Come back, " + m_PlayerPokemon->GetName() + "!");
-                m_DialogueQueue.push("Go! " + selectedPokemon->GetName() + "!");
-            }
+                    auto& msgQueue = m_BattleLogic->m_MessageQueue;
+                    while (!msgQueue.empty()) {
+                        m_DialogueQueue.push(msgQueue.front());
+                        msgQueue.pop();
+                    }
+                    if (m_DialogueQueue.empty())
+                        m_DialogueQueue.push("Used " + m_PendingItem + "!");
 
-            m_PlayerPokemon = selectedPokemon;
-            m_Animator->ResetState(BattleSide::PLAYER);
-
-            float startPct = (float)m_PlayerPokemon->GetCurrentHP() / m_PlayerPokemon->GetMaxHP();
-            m_Animator->AnimateHPDrain(BattleSide::PLAYER, startPct, startPct);
-
-            std::string pName = m_PlayerPokemon->GetName();
-            std::transform(pName.begin(), pName.end(), pName.begin(), ::tolower);
-            m_PlayerFrame1 = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/Pokemon/" + pName + "_back_1.png");
-            m_PlayerFrame2 = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/Pokemon/" + pName + "_back_2.png");
-            m_PlayerSprite->SetDrawable(m_PlayerFrame1);
-            m_PlayerSprite->SetVisible(true);
-            m_PlayerSprite->m_Transform.translation.y = -30.0f;
-            m_PlayerLevelTextDrawable->SetText(std::to_string(m_PlayerPokemon->GetLevel()));
-
-            if (wasFainted) {
-                m_BattleLogic = std::make_unique<BattleManager>(m_PlayerPokemon, m_EnemyPokemon, true);
-            } else {
-                m_BattleLogic->SetPlayerPokemon(m_PlayerPokemon);
-                BattleManager::TurnResult enemyResult = m_BattleLogic->ExecuteEnemyMove();
-
-                std::string oppKey = MoveDatabase::GetMove(m_BattleLogic->GetLastEnemyMove()).animation_key;
-                if (!oppKey.empty()) {
-                    if (oppKey.rfind("Move:", 0) == 0) oppKey = "OppMove:" + oppKey.substr(5);
-                    m_DialogueQueue.push("[ANIM:" + oppKey + ":TARGET_PLAYER]");
+                    m_IsTargetingForItem = false;
+                    m_PendingItem.clear();
+                    m_UIState = UIState::WAITING_TEXT;
+                    m_TextWaitTimer = 15;
+                    ProcessNextMessage();
+                    return true;
                 }
 
-                std::stringstream ss(enemyResult.message);
-                std::string line;
-                while (std::getline(ss, line, '\n'))
-                    if (!line.empty()) m_DialogueQueue.push(line);
-            }
+                // Normal switch
+                if (selectedPokemon->GetCurrentHP() <= 0) return true;
+                if (selectedPokemon == m_PlayerPokemon) return true;
 
-            m_UIState       = UIState::WAITING_TEXT;
-            m_TextWaitTimer = 15;
-            ProcessNextMessage();
+                m_PokemonMenu->Hide();
+                while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
+                bool wasFainted = (m_PlayerPokemon->GetCurrentHP() <= 0);
+                if (!wasFainted) m_DialogueQueue.push("Come back, " + m_PlayerPokemon->GetName() + "!");
+                m_DialogueQueue.push("Go! " + selectedPokemon->GetName() + "!");
+
+                m_PlayerPokemon = selectedPokemon;
+                m_BattleLogic->SetPlayerPokemon(m_PlayerPokemon);
+
+                std::string pName = m_PlayerPokemon->GetName();
+                std::transform(pName.begin(), pName.end(), pName.begin(), ::tolower);
+                m_PlayerFrame1 = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/Pokemon/" + pName + "_back_1.png");
+                m_PlayerFrame2 = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/Pokemon/" + pName + "_back_2.png");
+                m_PlayerSprite->SetDrawable(m_PlayerFrame1);
+                m_PlayerSprite->SetVisible(true);
+                m_PlayerLevelTextDrawable->SetText(std::to_string(m_PlayerPokemon->GetLevel()));
+
+                float startPct = (float)m_PlayerPokemon->GetCurrentHP() / m_PlayerPokemon->GetMaxHP();
+                m_Animator->ResetState(BattleSide::PLAYER);
+                m_Animator->AnimateHPDrain(BattleSide::PLAYER, startPct, startPct);
+
+                if (!wasFainted) {
+                    BattleManager::TurnResult enemyResult = m_BattleLogic->ExecuteEnemyMove();
+                    std::string oppKey = MoveDatabase::GetMove(m_BattleLogic->GetLastEnemyMove()).animation_key;
+                    if (!oppKey.empty()) {
+                        if (oppKey.rfind("Move:", 0) == 0) oppKey = "OppMove:" + oppKey.substr(5);
+                        m_DialogueQueue.push("[ANIM:" + oppKey + ":TARGET_PLAYER]");
+                    }
+                    std::stringstream ss(enemyResult.message);
+                    std::string line;
+                    while (std::getline(ss, line, '\n'))
+                        if (!line.empty()) m_DialogueQueue.push(line);
+                }
+
+                m_UIState = UIState::WAITING_TEXT;
+                m_TextWaitTimer = 15;
+                ProcessNextMessage();
+
+            } else {
+                // X/ESC — cancel
+                m_PokemonMenu->Hide();
+                if (m_IsTargetingForItem) {
+                    m_IsTargetingForItem = false;
+                    m_PendingItem.clear();
+                }
+                m_UIState = UIState::MAIN_MENU;
+                m_CursorIndex = 2;
+                UpdateCursorPosition();
+                SetDialogue("What will you do?");
+            }
         }
     }
     // ==========================================
     // STATE 7: CATCH ANIMATION
     // ==========================================
     else if (m_UIState == UIState::CATCH_ANIMATION) {
-        if (m_PokeballAnimator->Update()) {
-            if (m_PokeballAnimator->CatchSucceeded()) {
-                m_DialogueQueue.push("Gotcha! " + m_EnemyPokemon->GetName() + " was caught!");
-            } else {
-                m_EnemySprite->SetVisible(true);
-                m_DialogueQueue.push("Oh no! The wild Pokémon broke free!");
+            // Update the animator – it returns true only when fully finished
+            bool finished = m_PokeballAnimator->Update();
 
-                BattleManager::TurnResult enemyResult = m_BattleLogic->ExecuteEnemyMove();
-                std::string oppKey = MoveDatabase::GetMove(m_BattleLogic->GetLastEnemyMove()).animation_key;
-                if (!oppKey.empty()) {
-                    if (oppKey.rfind("Move:", 0) == 0) oppKey = "OppMove:" + oppKey.substr(5);
-                    m_DialogueQueue.push("[ANIM:" + oppKey + ":TARGET_PLAYER]");
+            if (finished) {
+                // NOW drain messages from BattleManager (they were queued during UseItem)
+                auto& msgQueue = m_BattleLogic->m_MessageQueue;
+                while (!msgQueue.empty()) {
+                    m_DialogueQueue.push(msgQueue.front());
+                    msgQueue.pop();
                 }
-                std::stringstream ss(enemyResult.message);
-                std::string line;
-                while (std::getline(ss, line, '\n'))
-                    if (!line.empty()) m_DialogueQueue.push(line);
+
+                // Fallback if queue empty (safety)
+                if (m_DialogueQueue.empty()) {
+                    if (m_PokeballAnimator->CatchSucceeded())
+                        m_DialogueQueue.push("Gotcha! " + m_EnemyPokemon->GetName() + " was caught!");
+                    else
+                        m_DialogueQueue.push("Oh no! The wild Pokémon broke free!");
+                }
+
+                // If catch failed, enemy gets a free attack
+                if (!m_PokeballAnimator->CatchSucceeded()) {
+                    m_EnemySprite->SetVisible(true);
+                    BattleManager::TurnResult enemyResult = m_BattleLogic->ExecuteEnemyMove();
+                    std::stringstream ss(enemyResult.message);
+                    std::string line;
+                    while (std::getline(ss, line, '\n'))
+                        if (!line.empty()) m_DialogueQueue.push(line);
+                }
+
+                // Transition to WAITING_TEXT to show messages
+                m_UIState = UIState::WAITING_TEXT;
+                m_TextWaitTimer = 15;
+                ProcessNextMessage();
             }
-
-            m_UIState       = UIState::WAITING_TEXT;
-            m_TextWaitTimer = 15;
-            ProcessNextMessage();
         }
-    }
-
     UpdateMenuVisibility();
     return true;
 }

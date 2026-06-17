@@ -1,15 +1,19 @@
 #include "BattleManager.hpp"
 #include "MoveDatabase.hpp"
+#include "ItemHelper.hpp"   
 #include "Util/Logger.hpp"
 #include <cstdlib>
 #include <cmath>
 #include <algorithm>
 
-BattleManager::BattleManager(std::shared_ptr<Pokemon> playerPokemon, std::shared_ptr<Pokemon> enemyPokemon, bool isWild)
-    : m_PlayerPokemon(playerPokemon)
-    , m_IsWildBattle(isWild)
-    , m_EnemyPokemon(enemyPokemon)
-    , m_State(BattleState::SELECTING_ACTION) {
+BattleManager::BattleManager(std::shared_ptr<Pokemon> playerPokemon,
+                             std::shared_ptr<Pokemon> enemyPokemon,
+                             bool isWild)
+    : m_IsWildBattle(isWild),
+      m_LastEnemyMove(""),
+      m_PlayerPokemon(playerPokemon),
+      m_EnemyPokemon(enemyPokemon),
+      m_State(BattleState::SELECTING_ACTION) {
 }
 
 // ==========================================
@@ -422,72 +426,69 @@ bool BattleManager::TryCatchPokemon(std::shared_ptr<Pokemon> target, float ballM
     return randomRoll <= finalCatchValue;
 }
 
-void BattleManager::UseItem(std::shared_ptr<Character> player, const std::string& itemName) {
-    // 1. Verify the player has the item
-    if (player->GetItemCount(itemName) <= 0) {
-        LOG_INFO("Player does not have any %s left!", itemName.c_str());
+
+void BattleManager::UseItem(std::shared_ptr<Character> player,
+                            std::shared_ptr<Pokemon> target,
+                            const std::string& itemName) {
+    // ==========================================
+    // POKEBALL LOGIC (handled here, not by helper)
+    // ==========================================
+    if (itemName == "Pokeball" || itemName == "Greatball" ||
+        itemName == "Ultraball" || itemName == "Masterball") {
+        // ... (keep your existing code) ...
         return;
     }
 
-    // 2. Consume the item
-    player->RemoveItem(itemName, 1);
+    // ==========================================
+    // ALL OTHER ITEMS – delegate to helper
+    // ==========================================
+    auto [success, msg] = ItemHelper::ApplyEffect(player, target, itemName);
+    m_MessageQueue.push(msg);
 
-    // ==========================================
-    // POKEBALL LOGIC
-    // ==========================================
-    if (itemName == "Pokeball" || itemName == "Great Ball" || itemName == "Ultra Ball") {
-        if (!m_IsWildBattle) {
-            LOG_INFO("The trainer blocked the ball! Don't be a thief!");
-            m_State = BattleState::EXECUTING_ENEMY_TURN; // You lose your turn!
-            return;
+    if (success) {
+        // If the target is the active Pokémon, push a sync tag for HP update
+        if (target && target == m_PlayerPokemon) {
+            m_MessageQueue.push("[SYNC_PLAYER]" + std::to_string(target->GetCurrentHP()));
         }
-
-        // Determine multiplier based on name
-        float multiplier = 1.0f;
-        if (itemName == "Great Ball") multiplier = 1.5f;
-        if (itemName == "Ultra Ball") multiplier = 2.0f;
-
-        LOG_INFO("You threw a %s!", itemName.c_str());
-        bool caught = TryCatchPokemon(m_EnemyPokemon, multiplier);
-
-        if (caught) {
-            LOG_INFO("Gotcha! %s was caught!", m_EnemyPokemon->GetName().c_str());
-            
-            // Stamp the Pokemon with its new home
-            m_EnemyPokemon->SetCaughtBall(itemName);
-
-            // Add to party
-            if (player->AddPokemon(m_EnemyPokemon)) {
-                LOG_INFO("Added %s to your party!", m_EnemyPokemon->GetName().c_str());
-            } else {
-                LOG_INFO("Party full! %s was sent to the PC!", m_EnemyPokemon->GetName().c_str());
-            }
-            
-            m_State = BattleState::BATTLE_WON; // End the battle!
-        } else {
-            LOG_INFO("Oh no! The Pokemon broke free!");
-            m_State = BattleState::EXECUTING_ENEMY_TURN; // Enemy gets to attack
-        }
-        return;
-    }
-
-    // ==========================================
-    // HEALING ITEM LOGIC (Example)
-    // ==========================================
-    if (itemName == "Potion") {
-        m_PlayerPokemon->Heal(20);
-        LOG_INFO("You used a Potion! %s recovered 20 HP.", m_PlayerPokemon->GetName().c_str());
+        // In battle, using an item always costs a turn
         m_State = BattleState::EXECUTING_ENEMY_TURN;
-        return;
     }
-    if (itemName == "Potion1") {
-        m_PlayerPokemon->Heal(50);
-        LOG_INFO("You used a Potion! %s recovered 50 HP.", m_PlayerPokemon->GetName().c_str());
-        m_State = BattleState::EXECUTING_ENEMY_TURN;
-        return;
-    }
+    // If not successful, we don't change state – the player can try something else
 }
 
 BattleManager::TurnResult BattleManager::ProcessEnemyTurn() {
     return ExecuteEnemyMove();
+}
+
+void BattleManager::SwitchPlayerPokemon(int partyIndex, std::shared_ptr<Character> player) {
+    auto& party = player->GetParty();
+    if (partyIndex < 0 || partyIndex >= static_cast<int>(party.size())) {
+        m_MessageQueue.push("Invalid Pokémon!");
+        return;
+    }
+
+    auto newPokemon = party[partyIndex];
+    if (newPokemon->IsFainted()) {
+        m_MessageQueue.push(newPokemon->GetName() + " is unable to battle!");
+        return;
+    }
+
+    // Remember if the current active was fainted
+    bool wasActiveFainted = m_PlayerPokemon->IsFainted();
+
+    // Perform switch
+    m_PlayerPokemon = newPokemon;
+
+    // Push messages
+    m_MessageQueue.push("Go! " + m_PlayerPokemon->GetName() + "!");
+    m_MessageQueue.push("[SYNC_PLAYER]" + std::to_string(m_PlayerPokemon->GetCurrentHP()));
+
+    // Determine next state
+    if (!wasActiveFainted) {
+        // If the previous was alive, enemy gets a free attack
+        m_State = BattleState::EXECUTING_ENEMY_TURN;
+    } else {
+        // If it fainted, switch happens without enemy turn; back to action menu
+        m_State = BattleState::SELECTING_ACTION;
+    }
 }

@@ -31,7 +31,7 @@ InventoryMenu::InventoryMenu(std::shared_ptr<Util::Renderer> renderer)
     m_LargePreviewIcon = std::make_shared<Util::GameObject>();
     m_LargePreviewIcon->SetZIndex(82.0f);
     m_LargePreviewIcon->m_Transform.scale = {3.0f, 3.0f}; 
-    m_LargePreviewIcon->m_Transform.translation = {-414.0f, -258.0f}; 
+    m_LargePreviewIcon->m_Transform.translation = {-388.0f, -260.0f}; 
     m_LargePreviewIcon->SetVisible(false);
     m_Renderer->AddChild(m_LargePreviewIcon);
 }

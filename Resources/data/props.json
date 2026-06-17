@@ -424,7 +424,7 @@
       "id": 7,
       "comment": "PROP_DOORMAT",
       "textures": ["PC_doormat.png"],
-      "zIndex": 0.1,
+      "zIndex": 0.3,
       "dynamicZ": false,
       "walkable": true,
       "offsetX": 0.0,

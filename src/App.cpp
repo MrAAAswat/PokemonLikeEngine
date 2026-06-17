@@ -18,6 +18,7 @@
 #include "MapGenerator.hpp"
 #include "BattleAnimation.hpp"
 #include "ItemDatabase.hpp"
+#include "TitleScreen.hpp"
 
 const std::string RES      = std::string(RESOURCE_DIR);
 const std::string MAP_DIR  = RES + "/maps/";
@@ -27,13 +28,19 @@ const std::string MAP_DIR  = RES + "/maps/";
 // ==========================================
 
 void App::Start() {
-    LOG_TRACE("Start");
-    
+    LOG_INFO("Start Game");
+
+    // 1. Initialise engine and UI subsystems FIRST
     InitSystems();
-    InitGameLoad();
     InitUI();
 
-    m_CurrentState = State::UPDATE;
+    // 2. Create and show the title / load-game screen
+    m_TitleScreen = std::make_shared<TitleScreen>(m_Renderer);
+    m_TitleScreen->Load();
+    m_Renderer->AddChild(m_TitleScreen);
+
+    // 3. Start in TITLE state – InitGameLoad() will be called later after the player chooses a slot
+    m_CurrentState = State::TITLE;
 }
 
 void App::Update() {
@@ -54,6 +61,7 @@ void App::Update() {
         case State::START:            break;
         case State::DIALOGUE:         ProcessDialogueState();       break;
         case State::START_MENU:       ProcessStartMenuState();      break;
+        case State::TITLE:            ProcessTitleState();          break;
         case State::INVENTORY_MENU:   m_InventoryMenu->Update();    break;
         case State::POKEMON_MENU:     ProcessPokemonMenuState();    break;
         case State::UPDATE:           ProcessOverworldUpdateState(); break;
@@ -62,7 +70,9 @@ void App::Update() {
         case State::END:              break;
     }
 
-    m_Map->Update();
+    if (m_CurrentState != State::TITLE) {
+        m_Map->Update();
+    }
     m_Renderer->Update();
 }
 
@@ -138,34 +148,50 @@ void App::InitSystems() {
     
 }
 
-void App::InitGameLoad() {
-    SaveSystem::GameState loadedState;
+// App.cpp — implementation
+void App::InitGameLoad(int slot) {
     m_Map->LoadConnections(RESOURCE_DIR "/maps/connections.txt");
-    
-    if (SaveSystem::LoadGame(loadedState)) {
-        GameConfig::LootedItems = loadedState.lootedItems;
+
+    // Build the save-file path for the selected slot.
+    // slot == -1 means New Game (no file to load).
+    std::string savePath = "";
+    if (slot >= 0) {
+        savePath = SaveSystem::SAVE_SLOT_PREFIX
+                 + "_" + std::to_string(slot) + ".json";
+    }
+
+    SaveSystem::GameState loadedState;
+    bool loaded = false;
+
+    if (!savePath.empty()) {
+        loaded = SaveSystem::LoadGame(loadedState, savePath);
+    }
+
+    if (loaded) {
+        GameConfig::LootedItems    = loadedState.lootedItems;
         m_Character->SetMoney(loadedState.money);
         m_Map->LoadLevel(loadedState.mapPath);
-        
         m_Character->SetGridPosition(loadedState.gridX, loadedState.gridY);
         m_Map->WarpTo(loadedState.gridX, loadedState.gridY);
-        m_Character->SetDirection(static_cast<Character::Direction>(loadedState.direction));
+        m_Character->SetDirection(
+            static_cast<Character::Direction>(loadedState.direction));
         m_Character->SetInventory(loadedState.inventory);
-        
         for (const auto& pkmn : loadedState.party) {
             m_Character->AddPokemon(pkmn);
         }
         m_LastHealMapPath = loadedState.lastHealMapPath;
         m_LastHealX       = loadedState.lastHealX;
         m_LastHealY       = loadedState.lastHealY;
+        m_ActiveSaveSlot  = slot;   // remember which file to overwrite on save
     } else {
-        GameConfig::LootedItems.clear(); 
-        m_Map->LoadLevel(MAP_DIR + "PlayerHouse2F"); 
-        m_Character->SetGridPosition(3, 5); 
+        // New Game defaults
+        GameConfig::LootedItems.clear();
+        m_Map->LoadLevel(MAP_DIR + "PlayerHouse2F");
+        m_Character->SetGridPosition(3, 5);
         m_Map->WarpTo(3, 5);
         m_LastHealMapPath = "";
         m_LastHealX = m_LastHealY = -1;
-        // Starter will be chosen via NPC interaction – no hardcoded Pokémon
+        m_ActiveSaveSlot = slot; // could be -1 until the player first saves
     }
 }
 
@@ -195,21 +221,42 @@ void App::InitUI() {
 }
 
 void App::PerformQuickSave() {
+    // If we started a New Game and never saved, auto‑pick a free slot.
+    if (m_ActiveSaveSlot < 0) {
+        // Find the first empty slot by checking file existence.
+        for (int i = 0; i < SaveSystem::MAX_SAVE_SLOTS; ++i) {
+            std::string path = SaveSystem::SAVE_SLOT_PREFIX
+                             + "_" + std::to_string(i) + ".json";
+            if (!std::filesystem::exists(path)) {
+                m_ActiveSaveSlot = i;
+                break;
+            }
+        }
+        // If all slots are full, just overwrite slot 0.
+        if (m_ActiveSaveSlot < 0)
+            m_ActiveSaveSlot = 0;
+    }
+
+    // Build the correct file path for the current slot.
+    std::string savePath = SaveSystem::SAVE_SLOT_PREFIX
+                         + "_" + std::to_string(m_ActiveSaveSlot) + ".json";
+
     SaveSystem::GameState current;
-    current.money = m_Character->GetMoney();
-    current.mapPath = m_Map->GetCurrentLevelPath(); 
-    current.gridX = m_Character->GetGridX();
-    current.gridY = m_Character->GetGridY();
-    current.direction = static_cast<int>(m_Character->GetFacingDirection());
-    current.inventory = m_Character->GetInventory();
-    current.lootedItems = GameConfig::LootedItems;
-    current.party = m_Character->GetParty();
+    current.money           = m_Character->GetMoney();
+    current.mapPath         = m_Map->GetCurrentLevelPath();
+    current.gridX           = m_Character->GetGridX();
+    current.gridY           = m_Character->GetGridY();
+    current.direction       = static_cast<int>(m_Character->GetFacingDirection());
+    current.inventory       = m_Character->GetInventory();
+    current.lootedItems     = GameConfig::LootedItems;
+    current.party           = m_Character->GetParty();
     current.lastHealMapPath = m_LastHealMapPath;
     current.lastHealX       = m_LastHealX;
     current.lastHealY       = m_LastHealY;
-    
-    SaveSystem::SaveGame(current);
-    LOG_TRACE("Game Saved Successfully!");
+
+    SaveSystem::SaveGame(current, savePath);   // <-- uses the slot path
+
+    LOG_INFO("Game saved to slot {} → {}", m_ActiveSaveSlot, savePath);
 }
 
 // ==========================================
@@ -970,4 +1017,19 @@ void App::ProcessDialogueState() {
             break;
         }
     }
+}
+
+
+void App::ProcessTitleState() {
+    m_TitleScreen->Update();
+
+    if (!m_TitleScreen->IsConfirmed()) return;
+
+    int slot = m_TitleScreen->GetSelectedSlot();
+    // slot == -1  →  New Game
+    // slot >= 0   →  Load slot N
+
+    m_TitleScreen->Hide();
+    InitGameLoad(slot);     // see section (c) below
+    m_CurrentState = State::UPDATE;
 }

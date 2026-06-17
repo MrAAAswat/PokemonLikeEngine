@@ -24,6 +24,7 @@ public:
     bool IsCancelled() const { return m_Cancelled; }
     bool IsActionSelected() const { return m_ActionSelected; } // NEW: detects 'Z' on a list item
     Mode GetMode() const { return m_Mode; }
+    bool WasActionSelected() const { return m_ActionSelected; }
 
 private:
     void ClearSlots();
@@ -51,11 +52,11 @@ private:
     bool m_ActionSelected = false; // NEW
 
     // --- NEW Grid Layout Constants ---
-    static constexpr float COL_1_X = -320.0f;
-    static constexpr float COL_2_X =  320.0f;
-    static constexpr float ROW_1_Y =  170.0f;
-    static constexpr float ROW_2_Y =    0.0f;
-    static constexpr float ROW_3_Y = -170.0f;
+    static constexpr float COL_1_X = -280.0f;
+    static constexpr float COL_2_X =  220.0f;
+    static constexpr float ROW_1_Y =  220.0f;
+    static constexpr float ROW_2_Y =    40.0f;
+    static constexpr float ROW_3_Y = -130.0f;
     
     static constexpr float SPRITE_OFFSET_X  = -140.0f;
     static constexpr float TEXT_OFFSET_X    =  -60.0f;

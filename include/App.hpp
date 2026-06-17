@@ -14,6 +14,7 @@
 #include "ShopData.hpp"
 #include "TrainerDatabase.hpp"
 #include "MoveDatabase.hpp"
+#include "TitleScreen.hpp"
 #include "Item.hpp"
 #include "NPC.hpp"
 
@@ -27,6 +28,7 @@ public:
     enum class State {
         START,
         UPDATE,
+        TITLE,
         DIALOGUE,         
         START_MENU,       
         POKEMON_MENU,     
@@ -44,12 +46,20 @@ public:
 
     void Start();
     void Update();
+    void ProcessTitleState();
     void End();
 
     std::vector<std::string> m_CurrentDialogueLines;
     size_t m_CurrentDialogueIndex = 0;
     std::shared_ptr<StartMenu> m_StartMenu;
     bool JustFinishedMoving() const { return m_JustFinishedMoving; }
+    bool IsUsableOverworld(const std::string& itemName) {
+    static const std::unordered_set<std::string> usable = {
+        "Potion", "Potion1", "Super Potion", "Hyper Potion", "Max Potion",
+        "Antidote", "Paralyze Heal", "Burn Heal", "Ice Heal", "Awakening"
+    };
+    return usable.count(itemName) > 0;
+    }
 
 private:
     void ValidTask();
@@ -89,12 +99,17 @@ private:
     int         m_LastHealX = -1;
     int         m_LastHealY = -1;
     bool        m_HasHealLocation = false;
+    bool m_IsItemTargeting = false;
+    std::string m_TargetItemName;
+    std::shared_ptr<TitleScreen> m_TitleScreen;
+    int m_ActiveSaveSlot = -1;
+
 
     // ==========================================
     // RESTRUCTURING HELPER FUNCTIONS
     // ==========================================
     void InitSystems();
-    void InitGameLoad();
+    void InitGameLoad(int slot = -1);
     void InitUI();
     void PerformQuickSave();
 

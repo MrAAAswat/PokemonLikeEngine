@@ -16,8 +16,9 @@ public:
     // Call this every frame in BattleUI's Update(). 
     // Returns true if the entire sequence is completely finished.
     bool Update(); 
-
+    bool IsFinished() const { return m_State == CatchState::IDLE; }
     bool CatchSucceeded() const { return m_WillSucceed; }
+    
 
 private:
     CatchState m_State = CatchState::IDLE;

@@ -54,7 +54,14 @@ public:
     bool PlayerWon()      const { return m_PlayerWon; }
     bool PlayerLost()     const { return m_PlayerLost; }
     bool PlayerEscaped()  const { return m_EscapeSuccessful && !m_PlayerWon && !m_PlayerLost; }
-
+    bool IsUsableInBattle(const std::string& itemName) {
+    static const std::unordered_set<std::string> usable = {
+            "Pokeball", "Greatball", "Ultraball", "Masterball",
+            "Potion", "Potion1", "Super Potion", "Hyper Potion", "Max Potion",
+            "Antidote", "Paralyze Heal", "Burn Heal", "Ice Heal", "Awakening"
+        };
+        return usable.count(itemName) > 0;
+    }
 private:
     enum class UIState {
         ANIMATING,
@@ -65,6 +72,10 @@ private:
         BAG_MENU,
         CATCH_ANIMATION
     };
+
+
+    std::string m_PendingItem;     
+    bool m_IsTargetingForItem = false;
 
     // ── Pokemon references ────────────────────────────────────────────────
     std::shared_ptr<Pokemon> m_PlayerPokemon;
@@ -167,6 +178,7 @@ private:
     int   m_TargetEnemyHP           = 0;
     float m_VisualPlayerHP          = 0.0f;
     float m_VisualEnemyHP           = 0.0f;
+
 
     // ── Dialogue queue ────────────────────────────────────────────────────
     std::queue<std::string>     m_DialogueQueue;

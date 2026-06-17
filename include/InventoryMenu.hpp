@@ -55,9 +55,9 @@ private:
     
     // --- 1280x720 METRICS ---
     static constexpr int   MAX_VISIBLE_ITEMS = 7;        
-    static constexpr float START_Y           = 242.0f;   
+    static constexpr float START_Y           = 262.0f;   
     static constexpr float LINE_SPACING       = 59.5f;    
-    static constexpr float TEXT_OFFSET_X      = -340.0f;  
+    static constexpr float TEXT_OFFSET_X      = -250.0f;  
     static constexpr int   INPUT_DELAY        = 10;       
     int m_InputTimer = 0;
 };

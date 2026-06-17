@@ -10,6 +10,15 @@ enum class PokemonType {
     POISON, GROUND, FLYING, PSYCHIC, BUG, ROCK, GHOST, DRAGON, DARK, FAIRY, STEEL
 };
 
+enum class StatusCondition {
+    NONE,
+    POISON,
+    BURN,
+    PARALYSIS,
+    SLEEP,
+    FREEZE
+};
+
 class Pokemon {
 public:
     // Constructor (Implementation remains here since it's just a quick initializer list)
@@ -25,6 +34,10 @@ public:
     int GetLevel() const { return m_Level; }
     PokemonType GetType1() const { return m_Type1; }
     PokemonType GetType2() const { return m_Type2; }
+
+    StatusCondition GetStatus() const { return m_Status; }
+    void SetStatus(StatusCondition status) { m_Status = status; }
+
 
     // --- Stat Getters ---
     int GetCurrentHP() const { return m_CurrentHP; }
@@ -61,6 +74,9 @@ public:
     static std::string GetTypeName(PokemonType type); 
     std::string GetTypeString() const;
     std::string GetSummary() const;
+    bool IsPoisoned() const { return m_Status == StatusCondition::POISON; }
+    void CurePoison() { if (m_Status == StatusCondition::POISON) m_Status = StatusCondition::NONE; }
+
     void ClearMoves();  
 
 private:
@@ -92,6 +108,8 @@ private:
 
     // Moves (Max 4)
     std::vector<std::string> m_Moves;
+
+    StatusCondition m_Status = StatusCondition::NONE;
     
     // Helper method for leveling up (Moved to Pokemon.cpp)
     void LevelUp();

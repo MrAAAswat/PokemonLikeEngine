@@ -25,6 +25,8 @@ set(SRC_FILES
     ShopMenu.cpp
     ShopData.cpp
     ItemDatabase.cpp
+    ItemHelper.cpp
+    TitleScreen.cpp
 
 
 
@@ -60,6 +62,8 @@ set(INCLUDE_FILES
     ShopMenu.hpp
     ShopData.hpp
     ItemDatabase.hpp
+    ItemHelper.hpp
+    TitleScreen.hpp
 )
 
 set(TEST_FILES

@@ -94,6 +94,6 @@ private:
     static constexpr float SPRITE_X_OFFSET  = -300.0f;  // small icon next to text
     static constexpr float MONEY_TEXT_X     = 300.0f;   // top‑right of screen
     static constexpr float MONEY_TEXT_Y     = 290.0f;
-    static constexpr float PREVIEW_POS_X    = -350.0f;  // bottom‑left box
-    static constexpr float PREVIEW_POS_Y    = -248.0f;
+    static constexpr float PREVIEW_POS_X    = -388.0f;  // bottom‑left box
+    static constexpr float PREVIEW_POS_Y    = -250.0f;
 };
