@@ -450,7 +450,7 @@ void Map::SpawnTilesAndProps() {
 
                 npc->SetGridPosition(x, y);
                 npc->SetSpawnPoint(x, y);
-                npc->SetVisualOffsetY(npcProps.visualOffsetY * GameConfig::SCALE / 3.0f);
+                npc->SetVisualOffsetY(npcProps.visualOffsetY);
                 static const std::unordered_map<std::string, Character::Direction> facingMap = {
                     {"Down",  Character::Direction::DOWN},
                     {"Up",    Character::Direction::UP},
