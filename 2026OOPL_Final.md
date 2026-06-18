@@ -1,5 +1,3 @@
-Here is the complete report as a single Markdown (`.md`) file. You can copy this directly into your `README.md` or `REPORT.md`.
-
 ```markdown
 # 2026 OOPL Final Report
 
@@ -21,7 +19,7 @@ Here is the complete report as a single Markdown (`.md`) file. You can copy this
 
 ### 遊戲簡介 / Game Introduction
 
-This project is a 2D Pokémon‑style open‑world RPG built on the **PTSD (Practical Tools for Simple Design)** framework provided in the OOPL course. Players can freely explore a multi‑region world, capture various Pokémon, and challenge multiple Gym Leaders in turn‑based battles. The map consists of interconnected towns and routes, each town featuring a Gym (BOSS battle), a Pokémon Center (healing), and NPC houses. Routes include forests, caves, and ordinary paths, offering diverse terrain and scenery.
+This project is a 2D Pokémon‑style open‑world RPG built on the **PTSD (Practical Tools for Simple Design)** framework provided in the OOPL course. Players can freely explore a multi‑region world, capture various Pokémon, and challenge multiple Gym Leaders in turn‑based battles. The map consists of interconnected towns and routes, each town featuring a BOSS battle, a Pokémon Center (healing), Shop system, other NPCs with potential quests. Routes include forests, caves, and ordinary paths, offering diverse terrain and scenery.
 
 The development cycle spanned 17 weeks, covering every major game‑development phase: character sprite design, tilemap creation, collision detection, NPC interaction systems, battle mechanics, and audio integration. The project is written primarily in **C++ (78.6%)**, with supporting CSS, CMake, and JavaScript files.
 
@@ -29,8 +27,8 @@ The development cycle spanned 17 weeks, covering every major game‑development 
 
 | Member | Responsibilities |
 |--------|-------------------|
-| Abdulahad Aswat | Bug fixing for encounter logic; map development and expansion |
-| G.Amarjargal Eddie | Overall architecture design; core system integration (battle, inventory, UI) |
+| Abdulahad Aswat | Bug fixing for encounter logic; map development and expansion as well as battle system, inventory UI |
+| G.Amarjargal Eddie | Overall architecture design; map improvements|
 
 ---
 
@@ -39,7 +37,7 @@ The development cycle spanned 17 weeks, covering every major game‑development 
 ### 遊戲規則 / Game Rules
 
 1. **Exploration & Movement**  
-   Use the arrow keys to move your character in four directions on a grid‑based map. The map includes collision detection – you cannot walk through water tiles, walls, or other obstacles.
+   Use the arrow keys to move your character in four directions on a grid‑based map. The map includes collision detection – you cannot walk through water tiles, walls, or other obstacles such as buildings or other npcs. You can interact with other 
 
 2. **Pokémon Collection**  
    Encounter wild Pokémon in tall grass or caves and capture them to add to your party.
@@ -47,8 +45,9 @@ The development cycle spanned 17 weeks, covering every major game‑development 
 3. **Battle System**  
    - Turn‑based combat – player and enemy alternate actions.  
    - Includes a **move/skill system** with damage calculation formulas.  
-   - Supports **status effects** (e.g., paralysis, poison) and **type effectiveness** (super‑effective, not very effective).  
+   - Supports type effectiveness (super‑effective, not very effective) as each pokemon has a type as well as each pokemon attack move.  
    - After battle, your Pokémon gain **experience points** and can **level up**.
+<img width="1599" height="894" alt="Screenshot 2026-05-16 212207" src="https://github.com/user-attachments/assets/061d854c-0fb2-41bf-b318-123c10e69995" />
 
 4. **Gym Leader Battles**  
    Each town has a Gym with a Leader (BOSS). Bosses have specific AI priority logic. Defeating a Gym Leader rewards the player with a **Badge** or a special key item.
@@ -101,8 +100,11 @@ The project is built on the **PTSD** framework, a game‑development template pr
    - Tilemap‑based background rendering (or image‑based for certain scenes).  
    - Sprite animation for the player character (4‑directional movement frames).
 
-3. **Collision Detection**  
-   Grid‑based collision system that restricts movement to walkable tiles.
+3. **Map System and Collision Detection**  
+   Grid‑based collision system that restricts movement to walkable tiles. We took inspiration from the original map system in the first Pokemon games that used       tile mapping where each grid had an ID that represented a texture for the tile. Our tiles had a few properties such as texture, is walkable and if their           animating or not. In addition to this we had 2 layers of csv files to manage the ground textures as well as one abovee for npcs, items and building structures.
+<img width="882" height="456" alt="image" src="https://github.com/user-attachments/assets/f70d3864-7f27-40f4-803c-cb1372e1c537" />
+<img width="636" height="640" alt="image" src="https://github.com/user-attachments/assets/f3bbcd1b-61c7-4dc3-a541-f91f49f52298" />
+
 
 4. **Battle System**  
    - Implemented as a **state machine** (overworld ↔ battle scene).  
@@ -117,7 +119,7 @@ The project is built on the **PTSD** framework, a game‑development template pr
 
 ### 使用到 AI/AI Agent 的部分 / AI / AI Agent Usage
 
-> *We did not use any AI or AI‑agent tools during development – this section is intentionally left blank.*
+> *We used AI tools to assist us in our research on the older Pokemon games and how those engines worked in helping us create our map system. We used tools such as Claude and Gemini to help us debug and sometimes generate code too. However, whenever code was generated it was done with the intention of knowing what structure we needed to implement and understanding of the PTSD framework.*
 
 ---
 
@@ -156,6 +158,6 @@ Equally important was **team collaboration** and **version control**. Using Git,
 
 | Member | Contribution |
 |--------|--------------|
-| Abdulahad Aswat | 50% |
-| G.Amarjargal Eddie | 50% |
+| Abdulahad Aswat | 60% |
+| G.Amarjargal Eddie | 40% |
 ```
