@@ -63,4 +63,7 @@ private:
     static constexpr float CURSOR_OFFSET_X  = -210.0f;
     static constexpr float SPRITE_SCALE     = 2.0f;
     static constexpr int   INPUT_DELAY      = 10;
+
+    std::shared_ptr<Core::Drawable> m_PartyBgImage;
+    std::shared_ptr<Core::Drawable> m_StatsBgImage;
 };

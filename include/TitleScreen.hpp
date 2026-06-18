@@ -7,44 +7,21 @@
 #include "Util/GameObject.hpp"
 #include "Util/Text.hpp"
 
-// ============================================================
-//  TitleScreen — shown once at startup for save-select / new game.
-//
-//  Does NOT include SaveSystem.hpp or Item.hpp.
-//  It reads save-slot JSON files directly via nlohmann/json,
-//  so it has no dependency on GameState or InventoryData.
-//
-//  Usage (in App):
-//    m_TitleScreen = std::make_shared<TitleScreen>(m_Renderer);
-//    m_TitleScreen->Load();
-//    m_CurrentState = State::TITLE;
-//
-//    // Inside State::TITLE branch of Update():
-//    m_TitleScreen->Update();
-//    if (m_TitleScreen->IsConfirmed()) {
-//        int slot = m_TitleScreen->GetSelectedSlot(); // -1 = New Game
-//        m_TitleScreen->Hide();
-//        InitGameLoad(slot);
-//        m_CurrentState = State::UPDATE;
-//    }
-// ============================================================
-
 class TitleScreen : public Util::GameObject {
 public:
     explicit TitleScreen(std::shared_ptr<Util::Renderer> renderer);
 
-    void Load();    // scan save files on disk, build card UI
-    void Update();  // call every frame while State == TITLE
-    void Hide();    // hide all scene objects when leaving state
+    void Load();    // Scan save files on disk, build card UI
+    void Update();  // Call every frame while State == TITLE
+    void Hide();    // Hide all scene objects when leaving state
 
     bool IsConfirmed()         const { return m_Confirmed; }
     int  GetSelectedSlot()     const { return m_SelectedSlot; }  // -1 = New Game
     bool IsDeletionRequested() const { return m_DeletionConfirmed; }
 
 private:
-    // Mirrors the constants in SaveSystem without including it
     static constexpr int MAX_SLOTS = 3;
-    static const     std::string SLOT_PREFIX;   // "save_slot"
+    static const     std::string SLOT_PREFIX;
 
     struct SlotInfo {
         bool        exists      = false;
@@ -78,6 +55,7 @@ private:
     int      m_SelectedSlot      = -1;
 
     float m_CardOffsetY = 350.0f;
+    float m_TotalTime   = 0.0f; // Tracked for floating cursor animation
 
     std::shared_ptr<Util::GameObject> m_Background;
     std::shared_ptr<Util::GameObject> m_TitleObj;

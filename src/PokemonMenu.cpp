@@ -32,10 +32,14 @@ static std::string TypeToString(PokemonType type) {
 PokemonMenu::PokemonMenu(std::shared_ptr<Util::Renderer> renderer)
     : m_Renderer(renderer)
 {
+        // Load background for party list
+    m_PartyBgImage = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/Party_bg.png");
+    // Load background for stats preview – create or download a suitable image!
+    m_StatsBgImage = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/pokedex_menu.png");
+
     m_BoxUI = std::make_shared<Util::GameObject>();
-    // Make sure bg.png is in your UI folder!
-    auto boxImg = ResourceManager::GetImageStore().Get(RESOURCE_DIR "/UI/Party_bg.png"); 
-    m_BoxUI->SetDrawable(boxImg);
+    // Start with party list background
+    m_BoxUI->SetDrawable(m_PartyBgImage);
     m_BoxUI->m_Transform.scale = {1.0f, 1.0f};
     m_BoxUI->SetZIndex(90.0f);
     m_BoxUI->m_Transform.translation = {0.0f, 0.0f};
@@ -175,6 +179,7 @@ void PokemonMenu::BuildPreviewSlot(const Pokemon& pkmn) {
 //  Show / Hide
 // ──────────────────────────────────────
 void PokemonMenu::Show(const std::vector<std::shared_ptr<Pokemon>>& party) {
+    m_BoxUI->SetDrawable(m_PartyBgImage);
     m_Mode          = Mode::PARTY_LIST;
     m_Confirmed     = false;
     m_Cancelled     = false;
@@ -191,6 +196,7 @@ void PokemonMenu::Show(const std::vector<std::shared_ptr<Pokemon>>& party) {
 }
 
 void PokemonMenu::ShowPreview(const Pokemon& pkmn) {
+    m_BoxUI->SetDrawable(m_StatsBgImage); 
     m_Mode      = Mode::PREVIEW;
     m_Confirmed = false;
     m_Cancelled = false;
