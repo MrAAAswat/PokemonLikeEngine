@@ -1,0 +1,52 @@
+{
+    "direction": 3,
+    "flags": {
+        "chosen_starter": true,
+        "fight_GymNPC1": true,
+        "fight_GymNPC1_rewarded": true,
+        "fight_boss1": true,
+        "fight_boss1_rewarded": true,
+        "fight_grunt": true,
+        "fight_grunt2": true,
+        "fight_grunt2_rewarded": true,
+        "fight_grunt_rewarded": true,
+        "met_ta1": true,
+        "met_ta1_rewarded": true,
+        "roadblock_cleared": true
+    },
+    "gridX": 11,
+    "gridY": 51,
+    "inventory": {
+        "StudentCard": {
+            "category": 2,
+            "quantity": 1
+        }
+    },
+    "lastHealMapPath": "maps/inside",
+    "lastHealX": 7,
+    "lastHealY": 3,
+    "lootedItems": [],
+    "mapPath": "maps/NTUT",
+    "money": 8700,
+    "party": [
+        {
+            "atk": 402,
+            "catchRate": 45,
+            "currentHp": 43,
+            "def": 45,
+            "exp": 33,
+            "level": 102,
+            "maxHp": 43,
+            "moves": [
+                "Scratch",
+                "Growl"
+            ],
+            "name": "Charmander",
+            "spa": 102,
+            "spd": 52,
+            "spe": 67,
+            "type1": 2,
+            "type2": 0
+        }
+    ]
+}
