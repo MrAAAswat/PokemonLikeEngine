@@ -57,15 +57,15 @@ The development cycle spanned 17 weeks, covering every major game‑development 
 
 | Overworld Exploration | Battle Scene |
 |-----------------------|--------------|
-| ![Overworld](./ScreenShots/NTUTmap.png) | ![Battle](./ScreenShots/BattleSystem.png) |
+| ![Overworld](ScreenShots/NTUTmap.png) | ![Battle](ScreenShots/BattleSystem.png) |
 
 | Inventory Menu | Shop Menu |
 |----------------|-----------|
-| ![Inventory](./ScreenShots/Inventory.png) | ![Shop](./ScreenShots/Store.png) |
+| ![Inventory](ScreenShots/Inventory.png) | ![Shop](ScreenShots/Store.png) |
 
 | Gym Leader Battle | Pokémon Party |
 |-------------------|---------------|
-| ![Gym](./ScreenShots/PickUpItem.png) | ![Party](./ScreenShots/PokemonTeam.png) |
+| ![Gym](ScreenShots/PickUpItem.png) | ![Party](ScreenShots/PokemonTeam.png) |
 
 
 
@@ -115,7 +115,7 @@ We decoupled game content from hardcoded logic by using **JSON** as our primary 
   - `encounters.json` – maps locations to encounterable Pokémon with spawn weights.
   - `npcs.json` – defines NPC dialogue trees, shop inventories, and action triggers (Heal, Warp, Battle, etc.).
 
-![JSONfiles](./ScreenShots/NPP&PropsDatabase.png) 
+![JSONfiles](ScreenShots/NPP&PropsDatabase.png) 
 
 - **Parsing**: We used the **nlohmann/json** library. Each data type is managed by a singleton `Database` class (e.g., `PokemonDatabase`, `ItemDatabase`), providing global access with minimal overhead.
 
@@ -132,8 +132,8 @@ The save system captures the full “world state”, not just player stats.
 #### 3. Map System and Collision Detection
 We use a **multi‑layered tilemap** approach with CSV layers:
 
-![mapSystemCSV](./ScreenShots/startTownCSV.png)
-![mapSysteminGame](./ScreenShots/startTownWideShot.png)
+![mapSystemCSV](ScreenShots/startTownCSV.png)
+![mapSysteminGame](ScreenShots/startTownWideShot.png)
 
 - **Ground Layer** – base terrain (grass, water, floor).  
 - **Prop / Interactive Layer** – collision data, NPC placements, and lootable items.
@@ -143,8 +143,8 @@ Each tile has properties (walkable, animated, interaction ID). Collision is grid
 *(Include your tile editor and CSV layer screenshots from your ScreenShots folder if you have them.)*
 
 Example tile property editor and map layers (replace with your actual filenames):
-![Tile properties](./ScreenShots/tile_properties.png)
-![CSV layers](./ScreenShots/csv_layers.png)
+![Tile properties](ScreenShots/tile_properties.png)
+![CSV layers](ScreenShots/csv_layers.png)
 
 #### 4. Battle System State Machine
 The battle sequence is a **finite state machine (FSM)** separate from the overworld loop.
