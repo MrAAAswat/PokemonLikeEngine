@@ -16,9 +16,9 @@
 
 ### 遊戲簡介
 
-This project is a 2D Pokémon‑style open‑world RPG built on the **PTSD (Practical Tools for Simple Design)** framework provided in the OOPL course. Players can freely explore a multi‑region world, capture various Pokémon, and challenge multiple Gym Leaders in turn‑based battles. The map consists of interconnected towns and routes, each town featuring a Gym (BOSS battle), a Pokémon Center (healing), a shop system, and NPCs with potential quests. Routes include forests, caves, and ordinary paths, offering diverse terrain and scenery.
+This project is a 2D Pokémon‑style open‑world RPG built on the **PTSD (Practical Tools for Simple Design)** framework provided in the OOPL course. Players can freely explore a multi‑map world, capture various Pokémon, and challenge multiple Bosses in turn‑based battles. The map consists of interconnected towns and routes, each town featuring a BOSS battle (not always a gym), a Pokémon Center (healing), a shop system, and NPCs with potential quests. Routes include forests and ordinary paths, offering diverse terrain and scenery.
 
-The development cycle spanned 17 weeks, covering every major game‑development phase: character sprite design, tilemap creation, collision detection, NPC interaction systems, battle mechanics, and audio integration. The project is written primarily in **C++ (78.6%)**, with supporting CSS, CMake, and JavaScript files.
+The development cycle covered every major game‑development phase: character sprite design, tilemap creation, collision detection, NPC interaction systems, battle mechanics. The project is written primarily in **C++  with supporting CSS, CMake, and JavaScript files and JSON files for databases.
 
 ### 組別分工
 
@@ -34,28 +34,31 @@ The development cycle spanned 17 weeks, covering every major game‑development 
 ### 遊戲規則
 
 1. **Exploration & Movement**
-Use the arrow keys to move your character in four directions on a grid‑based map. The map includes collision detection – you cannot walk through water tiles, walls, buildings, or other NPCs. You can interact with NPCs by pressing the action key.
-2. **Pokémon Collection**
-Encounter wild Pokémon in tall grass or caves and capture them to add to your party.
-3. **Battle System**
+Use the arrow keys to move your character in four directions on a grid‑based map. The map includes collision detection – you cannot walk through water tiles, walls, buildings, or other NPCs. You can interact with NPCs by pressing the action key 'Z'. To view the start menu the player can press 'I' when in the overworld, these commands do not work in battle. The start menu allows the player to view their data and access other UI elements such as their inventory, pokemon and to save their game. 
+
+3. **Pokémon Collection**
+Encounter wild Pokémon in tall grass and capture them to add to your party.
+4. **Battle System**
 * Turn‑based combat – player and enemy alternate actions.
 * Includes a **move/skill system** with damage calculation formulas.
 * Supports **type effectiveness** (super‑effective, not very effective) – each Pokémon has a type and each move has a type.
 * After battle, your Pokémon gain **experience points** and can **level up**.
 
 
-4. **Gym Leader Battles**
+4. **Boss Battles**
 Each town has a Gym with a Leader (BOSS). Bosses have specific AI priority logic. Defeating a Gym Leader rewards the player with a **Badge** or a special key item.
 5. **Item System**
 An in‑game **inventory** holds potions, Poké Balls, key items, and more. Items can be picked up from the map or obtained after battles.
 
 ### 遊戲畫面
 
-#### 🗺️ Overworld Exploration & Battle Scene
+####  Overworld Exploration & Battle Scene
 
-#### 🎒 Inventory Menu & Shop Menu
+![Overworld](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/NTUTmap.png)
 
-#### 🏆 Gym Leader Battle & Pokémon Party
+#### Inventory Menu & Shop Menu
+
+#### Gym Leader Battle & Pokémon Party
 
 ---
 
@@ -69,19 +72,29 @@ The overall directory structure is:
 
 ```text
 ├── PTSD/                # Core PTSD framework (provided by course)
-├── src/                 # Game source code
-│   ├── App.cpp/hpp      # Main application: initialises game, runs loop, handles scenes
-│   ├── Character.cpp/hpp# Base class for all moving entities (player, NPCs)
-│   ├── Player.cpp/hpp   # Player-specific logic (input, party, inventory)
-│   ├── NPC.cpp/hpp      # Non-player characters with dialogue and AI behaviours
-│   ├── Map.cpp/hpp      # Map loading, rendering, collision, and prop interaction
-│   ├── Pokemon/         # Pokémon data, battle, and party management
-│   ├── Battle/          # Battle state machine, AI, and UI
-│   ├── UI/              # Menus (inventory, shop, start screen)
-│   └── Data/            # JSON database classes (PokemonDatabase, ItemDatabase, etc.)
-├── assets/              # Sprites, tilesets, audio, and fonts
-├── data/                # JSON configuration files (items, pokemon, moves, encounters, npcs)
-└── ScreenShots/         # Report screenshots (not part of the build)
+├── include/             # Header files (*.hpp)
+│   ├── App.hpp          # Main application loop and scene state manager
+│   ├── Character.hpp    # Base class for moving entities (Player, NPCs)
+│   ├── Player.hpp       # Player logic, input mapping, party, and inventory
+│   ├── NPC.hpp          # Non-player characters with dialogue trees
+│   ├── Map.hpp          # Map loading, grid parsing, and layer rendering
+│   ├── Pokemon.hpp      # Pokémon stats, types, moves, and logic systems
+│   ├── BattleManager.hpp# Battle system finite state machine (FSM)
+│   ├── *Menu.hpp        # UI windows (InventoryMenu, ShopMenu, StartMenu)
+│   └── *Database.hpp    # Singletons for game databases (Item, Move, Trainer)
+├── src/                 # Implementation source files (*.cpp)
+│   ├── main.cpp         # Game entry point
+│   └── [Matching .cpp files for the headers listed above]
+├── Resources/           # Game assets and configuration data
+│   ├── data/            # JSON data files (items, moves, encounters)
+│   ├── maps/            # CSV tile maps and map grid structural files
+│   ├── Pokémon/         # Front and back combat sprites for pocket monsters
+│   ├── UI/ & Fonts/     # Visual menus, text assets, and HUD components
+│   └── [dialogue/, items/, npcs/, player/, tiles/, trainers.JSON]
+├── ScreenShots/         # Project report screenshots (ignored by build)
+├── CMakeLists.txt       # Main build configuration script
+├── files.cmake          # Supplementary build list of source compilation units
+└── savegame.json        # Persistent global game save file slot
 
 ```
 
@@ -103,8 +116,10 @@ We decoupled game content from hardcoded logic by using **JSON** as our primary 
 * **JSON Data Stores**:
 * `items.json` – item metadata, categories, buy/sell prices, effects.
 * `pokemon.json` / `moves.json` – base stats, types, growth rates, move power/accuracy.
+* * `pkmn_animations` – all the data related to the frames of attack animations with positioning and images and timing.
 * `encounters.json` – maps locations to encounterable Pokémon with spawn weights.
 * `npcs.json` – defines NPC dialogue trees, shop inventories, and action triggers (Heal, Warp, Battle, etc.).
+* `props.json` - defines all the properties of props such as textures, visual offsets and if they animate (Always, When Stepped on, never)
 
 
 
@@ -154,6 +169,7 @@ We used AI tools (Claude and Gemini) to assist with:
 * **Research**: studying the architecture and mechanics of classic Pokémon games to inform our map and battle system designs.
 * **Debugging**: identifying and fixing subtle bugs in collision detection and state transitions.
 * **Code generation** (sparingly): generating boilerplate or utility functions when we clearly understood the required structure and the PTSD framework’s constraints. All AI‑generated code was reviewed, tested, and integrated with full awareness of its functionality.
+* **Report spell checking and corrections.
 
 ---
 
