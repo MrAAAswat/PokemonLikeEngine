@@ -59,13 +59,13 @@ An in‑game **inventory** holds potions, Poké Balls, key items, and more. Item
 ![Overworld](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/NTUTmap.png)
 
 #### Inventory Menu & Shop Menu
-
+Player is given a balance of money that they earn through winning battles against NPCs, with this money they can purchase items that will assist them in their journey froms stores or NPCs. Items can also be picked up from the overworld and gained as a reward by beating NPCs in battle or completing an interaction with them. 
 ![store](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Store.png)
-
+Items are stored throughout save files and are viewable in the inventory menu where they are seperated into 3 categories of General, Pokeballs and Key Items.
 ![inventory](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Inventory.png)
 
 #### Gym Leader Battle & Pokémon Party
-
+Traditionally in Pokemon games in order to progress to the next map you must defeat the current Gym Leader in the level you are in. So we kept to that by creating a specific boss the player must defeat in order to unlock the next map, keeping the focus mainly to 2 so far.
 ![battlesystem](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/BattleSystem.png)
 
 ![party](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/PokemonTeam.png)
