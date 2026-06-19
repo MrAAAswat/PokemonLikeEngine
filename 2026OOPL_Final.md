@@ -46,8 +46,6 @@ The development cycle spanned 17 weeks, covering every major game‑development 
    - Supports **type effectiveness** (super‑effective, not very effective) – each Pokémon has a type and each move has a type.  
    - After battle, your Pokémon gain **experience points** and can **level up**.
 
-   <img width="1599" height="894" alt="Battle screenshot" src="https://github.com/user-attachments/assets/061d854c-0fb2-41bf-b318-123c10e69995" />
-
 4. **Gym Leader Battles**  
    Each town has a Gym with a Leader (BOSS). Bosses have specific AI priority logic. Defeating a Gym Leader rewards the player with a **Badge** or a special key item.
 
@@ -56,7 +54,20 @@ The development cycle spanned 17 weeks, covering every major game‑development 
 
 ### 遊戲畫面
 
-*(Additional screenshots can be inserted here – e.g., overworld exploration, inventory/menu screens, map editor views.)*
+
+| Overworld Exploration | Battle Scene |
+|-----------------------|--------------|
+| ![Overworld](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/NTUTmap.png) | ![Battle](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/BattleSystem.png) |
+
+| Inventory Menu | Shop Menu |
+|----------------|-----------|
+| ![Inventory](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Inventory.png) | ![Shop](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Store.png) |
+
+| Gym Leader Battle | Pokémon Party |
+|-------------------|---------------|
+| ![Gym](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/PickUpItem.png) | ![Party](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/PokemonTeam.png) |
+
+
 
 ---
 
@@ -64,34 +75,34 @@ The development cycle spanned 17 weeks, covering every major game‑development 
 
 ### 程式架構
 
-The project is built on the **PTSD** framework, a game‑development template provided for OOPL students. The overall structure is:
+The project is built on the **PTSD** framework, which provides a lightweight game loop, input handling, rendering, and audio. We extended it with our own game‑specific subsystems.
 
-```
-├── PTSD/                    # Core PTSD framework
-├── src/                     # Game source code
-│   ├── Trainer/             # Player trainer class (movement, NPC interactions)
-│   ├── Pokemon/             # Pokémon base class (HP, Attack, Defense, Types)
-│   ├── Map/                 # Map loading, tilemap rendering, collision
-│   ├── Battle/              # Turn‑based battle logic and AI
-│   ├── UI/                  # User interface (battle menus, HP bars, dialogs)
-│   └── Inventory/           # Inventory management and item usage
-├── assets/                  # Sprites, tilesets, Pokémon images, audio
-├── data/                    # JSON configuration files (items, pokemon, moves, etc.)
-└── CMakeLists.txt           # CMake build configuration
-```
+The overall directory structure is:
+├── PTSD/ # Core PTSD framework (provided by course)
+├── src/ # Game source code
+│ ├── App.cpp/hpp # Main application: initialises game, runs loop, handles scenes
+│ ├── Character.cpp/hpp # Base class for all moving entities (player, NPCs)
+│ ├── Player.cpp/hpp # Player-specific logic (input, party, inventory)
+│ ├── NPC.cpp/hpp # Non-player characters with dialogue and AI behaviours
+│ ├── Map.cpp/hpp # Map loading, rendering, collision, and prop interaction
+│ ├── Pokemon/ # Pokémon data, battle, and party management
+│ ├── Battle/ # Battle state machine, AI, and UI
+│ ├── UI/ # Menus (inventory, shop, start screen)
+│ └── Data/ # JSON database classes (PokemonDatabase, ItemDatabase, etc.)
+├── assets/ # Sprites, tilesets, audio, and fonts
+├── data/ # JSON configuration files (items, pokemon, moves, encounters, npcs)
+└── ScreenShots/ # Report screenshots (not part of the build)
 
-**Key Class Design**:
+text
 
-| Class | Purpose |
-|-------|---------|
-| `Trainer` | Controls player movement and interaction with NPCs / objects |
-| `Pokemon` | Base class with HP, stats, type, moves, and status effects |
-| `BattleManager` | Orchestrates turn flow – player action → enemy AI response |
-| `MapManager` | Loads tilemaps, renders backgrounds, and handles collision checks |
-| `DialogSystem` | Renders text dialogs using PTSD’s text rendering engine |
-| `Inventory` | Manages item storage, usage, and UI display |
-| `SaveSystem` | Serializes/deserializes game state to/from JSON for persistence |
-| `Database` (singletons) | Holds in‑memory copies of all JSON configuration data |
+**Core class relationships**:
+
+- `App` owns the `GameState`, which contains the current `Player`, `MapManager`, `BattleManager`, and `Inventory`.
+- The `MapManager` loads CSV tile data and manages collision via a 2D grid of `Tile` objects (each with walkable flag and prop ID).
+- `BattleManager` is a state machine that takes control of the game loop during battles; it uses `Pokemon` instances and a `Trainer` (enemy) with AI logic.
+- All JSON data is loaded into singleton `Database` classes (e.g., `PokemonDatabase::getInstance()`) for global access.
+
+We chose this architecture to **separate concerns**: rendering, game logic, and data are decoupled, making it easier to debug and extend.
 
 ### 程式技術
 
@@ -103,6 +114,8 @@ We decoupled game content from hardcoded logic by using **JSON** as our primary 
   - `pokemon.json` / `moves.json` – base stats, types, growth rates, move power/accuracy.
   - `encounters.json` – maps locations to encounterable Pokémon with spawn weights.
   - `npcs.json` – defines NPC dialogue trees, shop inventories, and action triggers (Heal, Warp, Battle, etc.).
+
+![JSONfiles](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/NPP&PropsDatabase.png) 
 
 - **Parsing**: We used the **nlohmann/json** library. Each data type is managed by a singleton `Database` class (e.g., `PokemonDatabase`, `ItemDatabase`), providing global access with minimal overhead.
 
@@ -119,14 +132,19 @@ The save system captures the full “world state”, not just player stats.
 #### 3. Map System and Collision Detection
 We use a **multi‑layered tilemap** approach with CSV layers:
 
+![mapSystemCSV](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/startTownCSV.png)
+![mapSysteminGame](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/startTownWideShot.png)
+
 - **Ground Layer** – base terrain (grass, water, floor).  
 - **Prop / Interactive Layer** – collision data, NPC placements, and lootable items.
 
 Each tile has properties (walkable, animated, interaction ID). Collision is grid‑based: before moving, we check the next tile’s `isWalkable` flag. For complex interactions (e.g., entering a cave), a custom **Prop ID** triggers the appropriate logic.
 
-Example tile property editor and map layers:
-<img width="882" height="456" alt="Tile properties" src="https://github.com/user-attachments/assets/f70d3864-7f27-40f4-803c-cb1372e1c537" />
-<img width="636" height="640" alt="CSV layers" src="https://github.com/user-attachments/assets/f3bbcd1b-61c7-4dc3-a541-f91f49f52298" />
+*(Include your tile editor and CSV layer screenshots from your ScreenShots folder if you have them.)*
+
+Example tile property editor and map layers (replace with your actual filenames):
+![Tile properties](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/tile_properties.png)
+![CSV layers](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/csv_layers.png)
 
 #### 4. Battle System State Machine
 The battle sequence is a **finite state machine (FSM)** separate from the overworld loop.
