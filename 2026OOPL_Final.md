@@ -20,6 +20,8 @@ This project is a 2D Pokémon‑style open‑world RPG built on the **PTSD (Prac
 
 The development cycle covered every major game‑development phase: character sprite design, tilemap creation, collision detection, NPC interaction systems, battle mechanics. The project is written primarily in **C++  with supporting CSS, CMake, and JavaScript files and JSON files for databases.
 
+![start](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/CollectStarter.png)
+
 ### 組別分工
 
 | Member | Responsibilities |
@@ -58,7 +60,16 @@ An in‑game **inventory** holds potions, Poké Balls, key items, and more. Item
 
 #### Inventory Menu & Shop Menu
 
+![store](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Store.png)
+
+![inventory](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Inventory.png)
+
 #### Gym Leader Battle & Pokémon Party
+
+![battlesystem](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/BattleSystem.png)
+
+![party](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/PokemonTeam.png)
+
 
 ---
 
@@ -121,6 +132,7 @@ We decoupled game content from hardcoded logic by using **JSON** as our primary 
 * `npcs.json` – defines NPC dialogue trees, shop inventories, and action triggers (Heal, Warp, Battle, etc.).
 * `props.json` - defines all the properties of props such as textures, visual offsets and if they animate (Always, When Stepped on, never)
 
+![data](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/NPP&PropsDatabase.png)
 
 
 * **Parsing**: We used the **nlohmann/json** library. Each data type is managed by a singleton `Database` class (e.g., `PokemonDatabase`, `ItemDatabase`), providing global access with minimal overhead.
@@ -145,6 +157,10 @@ We use a **multi‑layered tilemap** approach with CSV layers:
 * **Prop / Interactive Layer** – collision data, NPC placements, and lootable items.
 
 Each tile has properties (walkable, animated, interaction ID). Collision is grid‑based: before moving, we check the next tile’s `isWalkable` flag. For complex interactions (e.g., entering a cave), a custom **Prop ID** triggers the appropriate logic.
+
+![startTownCSV](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/startTownCSV.png)
+
+![startTown](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/startTownWideShot.png)
 
 #### 4. Battle System State Machine
 
