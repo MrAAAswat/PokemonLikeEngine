@@ -46,6 +46,8 @@ woodB1    5  8   ->  wood     7   1
 
 //StartTown
 StartTown   21  12  -> StartLab  4 12
+StartTown   14  27  -> FirstRoute  15 4
+FirstRoute  15 4 -> StartTown   14  27
 StartTown   9  11  -> PlayerHouse  3 8
 PlayerHouse  3 8 -> StartTown   9  11
 PlayerHouse  10 1 -> PlayerHouse2F  11  1  

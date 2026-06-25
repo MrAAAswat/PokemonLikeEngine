@@ -898,6 +898,11 @@ void App::ProcessDialogueState() {
                     preview->LearnMove("Tackle");
                     preview->LearnMove("Tail Whip");
                 }
+                else if (data == "Gengar") {
+                    preview = std::make_shared<Pokemon>("Gengar", 30, PokemonType::GHOST, PokemonType::NONE, 244, 248, 265, 250, 264, 243, 243);
+                    preview->LearnMove("Thunderbolt");
+                    preview->LearnMove("Flamethrower");
+                }
 
                 if (preview) {
                     m_StarterToGive = preview;

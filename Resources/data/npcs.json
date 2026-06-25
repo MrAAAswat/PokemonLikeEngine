@@ -126,7 +126,7 @@
       "action": "BATTLE",
       "actionData": "Trainer_Student1",
       "itemCategory": "GENERAL",
-      "flagOnInteract": "",
+      "flagOnInteract": "defeated_student2",
       "movement": {
         "type": "WANDER",
         "moveInterval": 3.5,
@@ -150,7 +150,7 @@
       "action": "BATTLE",
       "actionData": "Trainer_Student1",
       "itemCategory": "GENERAL",
-      "flagOnInteract": "",
+      "flagOnInteract": "defeated_student1_route1",
       "movement": {
         "type": "LOOK_AROUND",
         "moveInterval": 1.8,
@@ -284,7 +284,7 @@
       "action": "BATTLE",
       "actionData": "Grant",
       "itemCategory": "GENERAL",
-      "flagOnInteract": "",
+      "flagOnInteract": "defeated_brock",
       "movement": {
         "type": "LOOK_AROUND",
         "moveInterval": 1.8,
@@ -308,7 +308,7 @@
       "action": "BATTLE",
       "actionData": "Grant",
       "itemCategory": "GENERAL",
-      "flagOnInteract": "",
+      "flagOnInteract": "defeated_ta_lab",
       "movement": {
         "type": "LOOK_AROUND",
         "moveInterval": 1.8,
@@ -988,6 +988,112 @@
       "dialogue": {
         "default": [
           "Hey! Here to challenge our gym leader?",
+          "Fight me first!"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 134,
+      "texture": "Oak",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "NONE", 
+      "actionData": "",
+      "flagOnInteract": "event_enterNTUT", 
+      "flagToHide":"event_enterNTUT",
+      "sightRange": 4,
+      "sightDirection": "Right",
+      "movement": {
+        "type": "STILL"
+      },
+      "dialogue": {
+        "default": [
+          "Welcome to NTUT",
+          "You've now enrolled into the CSIE course",
+          "You're first task is to defeat"
+        ]
+      }
+    },
+        {
+      "id": 135,
+      "texture": "Pikachu",
+      "visualOffsetY": 0.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "event_pikachu",
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "event_pikachu",
+      "flagToHide": "event_pikachu",
+      "facing": "Down",
+      "movement": {
+        "type": "LOOK_AROUND",
+        "moveInterval": 1.8,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Pika"
+        ],
+        "flags": []
+      }
+    },
+    {
+      "id": 136,
+      "texture": "PokeBall",
+      "visualOffsetY": -16.0,
+      "zIndex": 0.9,
+      "dynamicZ": true,
+      "action": "SELECT_STARTER",
+      "actionData": "Gengar",
+      "flagOnInteract": "",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 0,
+        "wanderRadius": 0,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "This is for people who want the easy way out",
+          "Do you want to choose it? (Z = Yes, X = No)"
+        ],
+        "flags": [
+          {
+            "condition": "chosen_starter",
+            "lines": [
+              "It's an empty Pokéball."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 137,
+      "texture": "Bill",
+      "visualOffsetY": -8.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE",
+      "actionData": "Trainer_Student1",
+      "rewardMoney": 1000,
+      "itemCategory": "GENERAL",
+      "flagOnInteract": "NTUT_battle_1",
+      "facing": "Right",
+      "sightRange": 5,  
+      "sightDirection": "Right", 
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 1.0,
+        "wanderRadius": 1,
+        "patrolPoints": []
+      },
+      "dialogue": {
+        "default": [
+          "Hey are you new here?",
           "Fight me first!"
         ],
         "flags": []

@@ -884,6 +884,28 @@
       "frameDelay": 8
     },
     {
+      "id": 206,
+      "textures": ["Checkpoint4.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
+      "id": 207,
+      "textures": ["Checkpoint5.png"],
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "walkable": false,
+      "offsetX": 0.0,
+      "offsetY": 0.0,
+      "animMode": "STATIC",
+      "frameDelay": 8
+    },
+    {
       "id": 300,
       "textures": ["PlayerHouse.png"],
       "zIndex": 0.8,

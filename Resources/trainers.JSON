@@ -50,6 +50,12 @@
         { "species": "Snorlax", "level": 5 }
       ]
     },
+      "event_pikachu": {
+      "name": "event_pikachu",
+      "party": [
+        { "species": "Pikachu", "level": 5 }
+      ]
+    },
         "Gym1NPC": {
       "name": "Gym1NPC",
       "party": [

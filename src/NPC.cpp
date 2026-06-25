@@ -78,6 +78,16 @@ glm::vec2 NPC::Update(std::shared_ptr<Map> map) {
     // 3. Otherwise it's active – keep it visible
     SetVisible(true);
 
+    // ─── NEW: DEFEATED TRAINER STATE SYNCHRONIZATION ────────────────
+    // If this is a battle NPC and their defeat flag is already set in the world state...
+    if (m_ActionType == NPCAction::BATTLE && !m_InteractFlag.empty() && GameFlags::Get(m_InteractFlag)) {
+        // EXCLUSION: Only strip the battle action if they DO NOT offer an item reward
+        if (GetRewardItemName().empty()) { 
+            m_ActionType = NPCAction::NONE;
+        }
+    }
+    // ────────────────────────────────────────────────────────────────
+
     // If chasing but mid‑step, finish the current tile first
     if (m_Chasing && m_IsMoving) {
         glm::vec2 movement = Character::Update(map);
@@ -91,15 +101,20 @@ glm::vec2 NPC::Update(std::shared_ptr<Map> map) {
     }
 
     // Sight check
-    if (m_HasSight && !m_Triggered && m_ActionType == NPCAction::BATTLE) {
+    bool hasBeenInteractedWith = !m_InteractFlag.empty() && GameFlags::Get(m_InteractFlag);
+
+    // Any NPC with sight will approach, unless already triggered or already defeated/interacted with
+    if (m_HasSight && !m_Triggered && !hasBeenInteractedWith) {
         if (PlayerInSight(map)) {
             m_PlayerTargetX = map->GetPlayerGridX();
             m_PlayerTargetY = map->GetPlayerGridY();
+            
+            // Reuse your excellent tile-approach logic for standard dialogue/events
             map->StartNPCTrainerApproach(this, m_PlayerTargetX, m_PlayerTargetY);
             m_Chasing = true;
             return m_Transform.translation;
         }
-    } 
+    }
 
     // Visibility based on flags / config
     if (!IsActive() || !m_IsVisibleFromConfig) {
@@ -392,18 +407,33 @@ glm::vec2 NPC::ChasePlayer(std::shared_ptr<Map> map) {
     int dx = m_PlayerTargetX - m_GridX;
     int dy = m_PlayerTargetY - m_GridY;
 
+    // NPC has arrived next to the player
+    // Inside NPC.cpp -> NPC::ChasePlayer
     if (std::abs(dx) <= 1 && std::abs(dy) <= 1 && !(dx == 0 && dy == 0)) {
-        while (m_IsMoving) {          // finish the last tile
+        while (m_IsMoving) {  // Finish the final step animation frame
             Character::Update(map);
         }
         m_Chasing = false;
         m_Triggered = true;
         m_State = State::IDLE;
+
+        // ─── CLEANUP CUTSCENE FOR DIALOGUE-ONLY ENTITIES ────────────────
+        if (m_ActionType != NPCAction::BATTLE) {
+            // 1. Permanently raise the flag so they don't ambush the player again
+            if (!m_InteractFlag.empty()) {
+                GameFlags::Set(m_InteractFlag, true);
+            }
+
+            // 2. Call your map's cleanup function to reset flags and unlock characters
+            map->EndNPCTrainerApproach(); 
+        }
+        // ────────────────────────────────────────────────────────────────
+
+        // 3. Hand control over to the dialogue system
         map->TriggerInteraction(this);
         return m_Transform.translation;
     }
-
-    // Move one step towards the player
+    // Move one step closer
     int stepX = (dx > 0) ? 1 : (dx < 0) ? -1 : 0;
     int stepY = (dy > 0) ? 1 : (dy < 0) ? -1 : 0;
 
