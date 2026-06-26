@@ -17,6 +17,8 @@
 #include "TitleScreen.hpp"
 #include "Item.hpp"
 #include "NPC.hpp"
+#include "Util/BGM.hpp"
+
 
 struct InteractionResult {
     std::vector<std::string> dialogueLines; 
@@ -61,6 +63,9 @@ public:
     return usable.count(itemName) > 0;
     }
 
+    void PlayBGM(const std::string& path, bool loop = true);
+    std::string GetMapBGM(const std::string& mapPath);
+
 private:
     void ValidTask();
     int m_SwapIndex = -1;
@@ -94,6 +99,10 @@ private:
     bool m_PendingStarterConfirm = false;
     std::shared_ptr<Pokemon> m_StarterToGive;
     std::string m_PendingStarterSpecies;
+
+    std::shared_ptr<Util::BGM> m_BGM;
+    std::string m_CurrentBGMPath;
+
 
     std::string m_LastHealMapPath;
     int         m_LastHealX = -1;

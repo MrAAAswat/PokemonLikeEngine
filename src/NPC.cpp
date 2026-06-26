@@ -4,7 +4,9 @@
 #include "Util/Logger.hpp"
 #include "GameFlags.hpp"
 #include "Util/Animation.hpp"
-#include "Util/GameObject.hpp"    // for M_Transform.translation()
+#include "Util/GameObject.hpp" 
+#include "Util/SFX.hpp"
+#include "Util/BGM.hpp"
 
 #include <fstream>
 #include <cstdlib>   // rand()

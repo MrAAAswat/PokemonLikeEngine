@@ -119,6 +119,10 @@ void App::InitSystems() {
     m_Map->SetPlayer(m_Character.get());
     m_Renderer->AddChild(m_Character); 
 
+    m_BGM = std::make_shared<Util::BGM>(RES + "/audio/bgm/Route 1.mp3");
+    m_CurrentBGMPath = "";
+    m_BGM->SetVolume(64); // 0-128
+
     m_BattleUI = std::make_shared<BattleUI>(m_Renderer);  
     
     try {
@@ -142,6 +146,8 @@ void App::InitSystems() {
         m_Character->SetVisible(false);
         m_Map->SetVisible(false);
         m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npc->GetParty(), m_PendingBattleFlag);
+        
+        PlayBGM(RES + "/audio/bgm/Battle roaming.mp3");
         m_CurrentState = State::BATTLE;
     }
         );
@@ -193,6 +199,7 @@ void App::InitGameLoad(int slot) {
         m_LastHealX = m_LastHealY = -1;
         m_ActiveSaveSlot = slot; // could be -1 until the player first saves
     }
+    PlayBGM(GetMapBGM(m_Map->GetCurrentLevelPath()));
 }
 
 void App::InitUI() {
@@ -264,8 +271,10 @@ void App::PerformQuickSave() {
 // ==========================================
 
 void App::ProcessBattleState() {
+    
     m_BattleUI->Update();
 
+    
     if (!m_BattleUI->IsBattleOver() && !Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
         return;   // Battle still ongoing – nothing to do
     }
@@ -344,7 +353,7 @@ void App::ProcessBattleState() {
     if (m_Map->IsNPCTrainerApproachActive()) {
         m_Map->EndNPCTrainerApproach();
     }
-
+    PlayBGM(GetMapBGM(m_Map->GetCurrentLevelPath()));
     m_CurrentState = State::UPDATE;
 }
 
@@ -550,6 +559,7 @@ void App::HandleOverworldWarping() {
     }
     m_Character->StopMoving();
     m_Character->ClearDoorFlag(); 
+    PlayBGM(GetMapBGM(m_Map->GetCurrentLevelPath()));
 }
 
 void App::HandleOverworldEncounters() {
@@ -570,6 +580,7 @@ void App::HandleOverworldEncounters() {
                 m_Map->SetVisible(false); 
                 
                 auto wildPokemon = GenerateWildPokemon(m_Map->GetCurrentLevelPath()); 
+                PlayBGM(RES + "/audio/bgm/Battle Wild.mp3");
                 m_BattleUI->Show(m_Character->GetParty(), wildPokemon);
             }
         } 
@@ -1037,4 +1048,75 @@ void App::ProcessTitleState() {
     m_TitleScreen->Hide();
     InitGameLoad(slot);     // see section (c) below
     m_CurrentState = State::UPDATE;
+}
+
+void App::PlayBGM(const std::string& path, bool loop) {
+    if (m_CurrentBGMPath == path) return;
+
+    std::ifstream testFile(path);
+    if (!testFile.is_open()) {
+        LOG_ERROR("PlayBGM: file not found at '{}'", path);
+        return;
+    }
+    testFile.close();
+
+    m_CurrentBGMPath = path;
+    
+    // Construct a fresh BGM object instead of reusing LoadMedia,
+    // which goes through the potentially-poisoned AssetStore cache
+    m_BGM = std::make_shared<Util::BGM>(path);
+    m_BGM->SetVolume(64);
+    m_BGM->FadeIn(500, loop ? -1 : 0);
+
+    const char* err = Mix_GetError();
+    if (err && err[0] != '\0') {
+        LOG_ERROR("PlayBGM: Mix_GetError = '{}'", err);
+    }
+    LOG_INFO("PlayBGM: playing '{}' Mix_PlayingMusic={}", path, Mix_PlayingMusic());
+}
+
+
+std::string App::GetMapBGM(const std::string& mapPath) {
+    // These static variables persist across function calls
+    static std::unordered_map<std::string, std::string> s_MapBGM;
+    static bool s_ConfigLoaded = false;
+
+    // 1. One-time setup: Load the JSON from the disk on the first request
+    if (!s_ConfigLoaded) {
+        std::string configPath = RES + "/data/bgm_mapping.json";
+        std::ifstream file(configPath);
+
+        if (file.is_open()) {
+            try {
+                nlohmann::json jsonConfig;
+                file >> jsonConfig;
+
+                // Transfer data from JSON into our ultra-fast runtime lookup map
+                for (auto& [key, value] : jsonConfig.items()) {
+                    s_MapBGM[key] = value.get<std::string>();
+                }
+                s_ConfigLoaded = true;
+            } 
+            catch (const std::exception& e) {
+                LOG_INFO("JSON Parsing Error in bgm_mapping: {}", e.what());
+            }
+            file.close();
+        } else {
+            LOG_INFO("Critical: Could not open BGM configuration file at '{}'", configPath);
+        }
+    }
+
+    // 2. Scan our cached memory map for partial matching strings
+    for (const auto& [key, bgm] : s_MapBGM) {
+        if (key != "DEFAULT" && mapPath.find(key) != std::string::npos) {
+            return RES + bgm;
+        }
+    }
+
+    // 3. Fallback to our data-driven default string, or hardcode a final safety net
+    if (s_MapBGM.find("DEFAULT") != s_MapBGM.end()) {
+        return RES + s_MapBGM["DEFAULT"];
+    }
+    
+    return RES + "/audio/bgm/Route 1.mp3"; 
 }

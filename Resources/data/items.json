@@ -69,6 +69,16 @@
       "zIndex": 0.5,
       "buyPrice": 1500,
       "sellPrice": 800
+    },
+        {
+      "id": 255,
+      "texture": "Axe_Item.png",
+      "shopTexture": "000.png",
+      "name": "Axe_Item",
+      "category": "KEY_ITEMS",
+      "zIndex": 0.5,
+      "buyPrice": 1500,
+      "sellPrice": 800
     }
   ]
 }

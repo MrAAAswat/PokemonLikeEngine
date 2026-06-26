@@ -97,11 +97,11 @@ void PokemonMenu::BuildSlots(const std::vector<std::shared_ptr<Pokemon>>& party)
         spriteObj->m_Transform.translation = { gridPositions[i].x + SPRITE_OFFSET_X, gridPositions[i].y };
 
         // Info text - using \n to stack Name and HP so it fits nicely in the box
-        std::string info = p->GetName() + "  Lv." + std::to_string(p->GetLevel()) + "\n"
+        std::string info = p->GetName() + "  Lv." + std::to_string(p->GetLevel()) + "\n" + "\n"
                          + "HP: " + std::to_string(p->GetCurrentHP()) + "/" + std::to_string(p->GetMaxHP());
         
         auto textDraw = std::make_shared<Util::Text>(
-            RESOURCE_DIR "/Fonts/micross.ttf", 24, info, Util::Color(50, 50, 50));
+            RESOURCE_DIR "/Fonts/power clear.ttf", 24, info, Util::Color(255, 255, 255));
         auto textObj = std::make_shared<Util::GameObject>();
         textObj->SetDrawable(textDraw);
         textObj->SetZIndex(91.0f);
@@ -162,8 +162,8 @@ void PokemonMenu::BuildPreviewSlot(const Pokemon& pkmn) {
     info += "\n[Z] Choose this Pokemon   [X] Cancel";
 
     auto textDraw = std::make_shared<Util::Text>(
-        RESOURCE_DIR "/Fonts/micross.ttf", 22, info,
-        Util::Color(50, 50, 50));
+        RESOURCE_DIR "/Fonts/power clear.ttf", 20, info,
+        Util::Color(255, 255, 255));
     slot.text = std::make_shared<Util::GameObject>();
     slot.text->SetDrawable(textDraw);
     slot.text->SetZIndex(91.0f);
