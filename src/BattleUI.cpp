@@ -770,10 +770,10 @@ else if (m_UIState == UIState::BAG_MENU) {
 
             if (caught) {
                 //m_Player->AddPokemon(m_EnemyPokemon);
-                m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, true, m_EnemySprite);
+                m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, true, m_EnemySprite, selectedItem);
                 m_UIState = UIState::CATCH_ANIMATION;
             } else {
-                m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, false, m_EnemySprite);
+                m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, false, m_EnemySprite, selectedItem);
                 m_UIState = UIState::CATCH_ANIMATION;
             }
         } else {
