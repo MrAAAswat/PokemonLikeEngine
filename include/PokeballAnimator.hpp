@@ -11,8 +11,9 @@ public:
     PokeballAnimator(std::shared_ptr<Util::Renderer> renderer);
 
     // Call this to kick off the animation
-    void StartCatch(glm::vec2 startPos, glm::vec2 targetPos, bool willSucceed, std::shared_ptr<Util::GameObject> targetSprite);
-    
+    void StartCatch(glm::vec2 startPos, glm::vec2 targetPos, bool willSucceed, 
+                    std::shared_ptr<Util::GameObject> targetSprite,
+                    const std::string& ballName = "OWPokeball");    
     // Call this every frame in BattleUI's Update(). 
     // Returns true if the entire sequence is completely finished.
     bool Update(); 

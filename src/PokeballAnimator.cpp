@@ -34,19 +34,29 @@ PokeballAnimator::PokeballAnimator(std::shared_ptr<Util::Renderer> renderer) {
 }
 
 // Start the animation
-void PokeballAnimator::StartCatch(glm::vec2 startPos, glm::vec2 targetPos, bool willSucceed, std::shared_ptr<Util::GameObject> targetSprite) {
+void PokeballAnimator::StartCatch(glm::vec2 startPos, glm::vec2 targetPos, bool willSucceed, 
+                                   std::shared_ptr<Util::GameObject> targetSprite,
+                                   const std::string& ballName) {
     m_StartPos = startPos;
     m_TargetPos = targetPos;
     m_WillSucceed = willSucceed;
     m_TargetSprite = targetSprite;
-    
+
+    // Load the correct ball image
+    std::string ballPath = std::string(RESOURCE_DIR) + "/items/" + ballName + ".png";
+    try {
+        m_PokeballSprite->SetDrawable(ResourceManager::GetImageStore().Get(ballPath));
+    } catch (...) {
+        LOG_ERROR("Could not load ball image: {}", ballPath);
+    }
+
     m_PokeballSprite->SetVisible(true);
     m_PokeballSprite->m_Transform.translation = m_StartPos;
-    
+
     m_Timer = 0;
     m_Shakes = 0;
     m_TargetShakes = m_WillSucceed ? 3 : (rand() % 4);
-    
+
     m_State = CatchState::THROWING;
 }
 
@@ -65,8 +75,9 @@ bool PokeballAnimator::Update() {
         
         // Y movement with an arc (Sine wave makes it go up, then down)
         float arcHeight = 200.0f; // How high the ball goes
-        float currentY = m_StartPos.y + (m_TargetPos.y - m_StartPos.y) * progress 
-                         + (std::sin(progress * 3.14159f) * arcHeight);
+        glm::vec2 adjustedTarget = {m_TargetPos.x, m_TargetPos.y - 60.0f};
+        float currentY = m_StartPos.y + (adjustedTarget.y - m_StartPos.y) * progress
+                     + (std::sin(progress * 3.14159f) * arcHeight);
 
         // Apply translations and spin the ball
         m_PokeballSprite->m_Transform.translation = {currentX, currentY};
