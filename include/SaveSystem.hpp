@@ -123,32 +123,37 @@ namespace SaveSystem {
     // LoadGame
     // ------------------------------------------------------------------
     inline bool LoadGame(GameState& outState,
-                         const std::string& path = SAVE_PATH) {
-        if (!std::filesystem::exists(path)) return false;
+                     const std::string& path = SAVE_PATH) {
+    if (!std::filesystem::exists(path)) return false;
 
-        std::ifstream inFile(path);
-        if (!inFile.is_open()) return false;
+    std::ifstream inFile(path);
+    if (!inFile.is_open()) return false;
 
-        json j;
-        inFile >> j;
+    json j;
+    inFile >> j;
 
-        outState.mapPath   = ToAbsoluteMapPath(j.value("mapPath", ""));
-        outState.gridX     = j.value("gridX", 0);
-        outState.gridY     = j.value("gridY", 0);
-        outState.direction = j.value("direction", 0);
-        outState.money     = j.value("money", 0);
+    outState.mapPath   = ToAbsoluteMapPath(j.value("mapPath", ""));
+    outState.gridX     = j.value("gridX", 0);
+    outState.gridY     = j.value("gridY", 0);
+    outState.direction = j.value("direction", 0);
+    outState.money     = j.value("money", 0);
 
-        outState.lastHealMapPath = ToAbsoluteMapPath(j.value("lastHealMapPath", ""));
-        outState.lastHealX = j.value("lastHealX", -1);
-        outState.lastHealY = j.value("lastHealY", -1);
+    outState.lastHealMapPath = ToAbsoluteMapPath(j.value("lastHealMapPath", ""));
+    outState.lastHealX = j.value("lastHealX", -1);
+    outState.lastHealY = j.value("lastHealY", -1);
 
-        if (j.contains("flags")) {
-            for (auto& [key, value] : j["flags"].items())
-                GameFlags::Set(key, value.get<bool>());
+    if (j.contains("flags")) {
+        for (auto& [key, value] : j["flags"].items())
+            GameFlags::Set(key, value.get<bool>());
+    }
+
+    // --- Load looted items and convert back to absolute paths ---
+    if (j.contains("lootedItems")) {
+        outState.lootedItems.clear();
+        for (const auto& item : j["lootedItems"]) {
+            outState.lootedItems.insert(ToAbsoluteMapPath(item.get<std::string>()));
         }
-
-        if (j.contains("lootedItems"))
-            outState.lootedItems = j["lootedItems"].get<std::unordered_set<std::string>>();
+    }
 
         if (j.contains("inventory")) {
             for (auto& [key, value] : j["inventory"].items()) {

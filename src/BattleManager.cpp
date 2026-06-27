@@ -434,10 +434,27 @@ void BattleManager::UseItem(std::shared_ptr<Character> player,
     // POKEBALL LOGIC (handled here, not by helper)
     // ==========================================
     if (itemName == "Pokeball" || itemName == "Greatball" ||
-        itemName == "Ultraball" || itemName == "Masterball") {
-        // ... (keep your existing code) ...
+    itemName == "Ultraball" || itemName == "Masterball") {
+    
+    if (!m_IsWildBattle) {
+        m_MessageQueue.push("You can't catch a trainer's Pokemon!");
         return;
     }
+
+    float multiplier = 1.0f;
+    if      (itemName == "Greatball")  multiplier = 1.5f;
+    else if (itemName == "Ultraball")  multiplier = 2.0f;
+    else if (itemName == "Masterball") multiplier = 255.0f;
+
+    if (TryCatchPokemon(m_EnemyPokemon, multiplier)) {
+        m_State = BattleState::BATTLE_WON;
+        m_MessageQueue.push(m_EnemyPokemon->GetName() + " was caught!");
+    } else {
+        m_MessageQueue.push(m_EnemyPokemon->GetName() + " broke free!");
+        m_State = BattleState::EXECUTING_ENEMY_TURN;
+    }
+    return;
+}
 
     // ==========================================
     // ALL OTHER ITEMS – delegate to helper

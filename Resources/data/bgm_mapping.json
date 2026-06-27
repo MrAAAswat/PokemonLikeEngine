@@ -1,5 +1,27 @@
 {
   "PlayerHouse2F": "/audio/bgm/Route 1.mp3",
   "StartTown": "/audio/bgm/Route 1.mp3",
+  "level":  "/audio/bgm/Route 2.mp3",
+  "FirstRoute":  "/audio/bgm/Route 2.mp3",
+  "HallWay12":  "/audio/bgm/Lab.mp3",
+  "Class12F":  "/audio/bgm/Lab.mp3",
+  "StartLab":  "/audio/bgm/Lab.mp3",
+  "ElevatorU":  "/audio/bgm/Lab.mp3",
+  "ElevatorD":  "/audio/bgm/Lab.mp3",
+  "TechBuilding":  "/audio/bgm/Lab.mp3",
+  "PokeMart":  "/audio/bgm/Poke Mart.mp3",
+  "inside":  "/audio/bgm/Poke Center.mp3",
+  "wood":  "/audio/bgm/Cave.mp3",
+  "woodB1":  "/audio/bgm/Cave.mp3",
+  "NTUT":  "/audio/bgm/Islands.mp3",
+
+  "WILD_BATTLE": "/audio/bgm/Battle Wild.mp3",
+  
+  "DEFAULT_BATTLE": "/audio/bgm/Battle roaming.mp3",
+  "rival_fight_1": "/audio/bgm/Rival Theme.mp3",
+  "fight_boss1": "/audio/bgm/Battle Champion.mp3",
+  "event_NTUT_boss": "/audio/bgm/Battle Champion.mp3",
+
+
   "DEFAULT": "/audio/bgm/Route 1.mp3"
 }

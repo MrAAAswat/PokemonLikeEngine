@@ -734,46 +734,9 @@ bool BattleUI::Update() {
     // ==========================================
     // STATE 5: BAG MENU
     // ==========================================
-    else if (m_UIState == UIState::BAG_MENU) {
-        // Check Z BEFORE calling Update(), so the timer can't eat it
-        if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
-            std::string selectedItem = m_InventoryMenu->GetSelectedItem();
-            LOG_INFO("[BAG_MENU] Z pressed, selected: '{}'", selectedItem);
-            if (!selectedItem.empty() && IsUsableInBattle(selectedItem)) {
-                bool isPokeball = (selectedItem == "Pokeball" || 
-                                selectedItem == "Greatball" || 
-                                selectedItem == "Ultraball" ||
-                                selectedItem == "Masterball");
-                m_InventoryMenu->Hide();
-
-                if (isPokeball) {
-                    while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
-                    m_BattleLogic->UseItem(m_Player, nullptr, selectedItem);
-                    bool caught = (m_BattleLogic->GetState() == BattleManager::BattleState::BATTLE_WON);
-                    if (caught) {
-                        m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, true, m_EnemySprite);
-                        m_UIState = UIState::CATCH_ANIMATION;
-                    } else {
-                        auto& msgQueue = m_BattleLogic->m_MessageQueue;
-                        while (!msgQueue.empty()) {
-                            m_DialogueQueue.push(msgQueue.front());
-                            msgQueue.pop();
-                        }
-                        m_UIState = UIState::WAITING_TEXT;
-                        m_TextWaitTimer = 15;
-                        ProcessNextMessage();
-                    }
-                } else {
-                    m_PendingItem = selectedItem;
-                    m_IsTargetingForItem = true;
-                    m_PokemonMenu->Show(m_Player->GetParty());
-                    m_UIState = UIState::POKEMON_MENU;
-                }
-            }
-            return true;
-        }
-
-        // Update handles navigation and X/ESC to close
+else if (m_UIState == UIState::BAG_MENU) {
+    // Navigation/close runs first, but we block Z from reaching it
+    if (!Util::Input::IsKeyDown(Util::Keycode::Z)) {
         if (m_InventoryMenu->Update()) {
             m_InventoryMenu->Hide();
             m_UIState = UIState::MAIN_MENU;
@@ -782,6 +745,46 @@ bool BattleUI::Update() {
             return true;
         }
     }
+
+    // Z is handled exclusively here — never leaks into InventoryMenu::Update()
+    if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
+        std::string selectedItem = m_InventoryMenu->GetSelectedItem();
+        LOG_INFO("[BAG_MENU] Z pressed, selected: '{}'", selectedItem);
+
+        // Eat the input regardless, so the menu can't also react to it
+        if (selectedItem.empty() || !IsUsableInBattle(selectedItem)) {
+            return true;
+        }
+
+        bool isPokeball = (selectedItem == "Pokeball"   ||
+                           selectedItem == "Greatball"  ||
+                           selectedItem == "Ultraball"  ||
+                           selectedItem == "Masterball");
+        m_InventoryMenu->Hide();
+
+        if (isPokeball) {
+            while (!m_DialogueQueue.empty()) m_DialogueQueue.pop();
+            m_BattleLogic->UseItem(m_Player, m_EnemyPokemon, selectedItem);
+            m_Player->RemoveItem(selectedItem, 1);
+            bool caught = (m_BattleLogic->GetState() == BattleManager::BattleState::BATTLE_WON);
+
+            if (caught) {
+                //m_Player->AddPokemon(m_EnemyPokemon);
+                m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, true, m_EnemySprite);
+                m_UIState = UIState::CATCH_ANIMATION;
+            } else {
+                m_PokeballAnimator->StartCatch({-270.0f, -50.0f}, {400.0f, 150.0f}, false, m_EnemySprite);
+                m_UIState = UIState::CATCH_ANIMATION;
+            }
+        } else {
+            m_PendingItem = selectedItem;
+            m_IsTargetingForItem = true;
+            m_PokemonMenu->Show(m_Player->GetParty());
+            m_UIState = UIState::POKEMON_MENU;
+        }
+        return true;
+    }
+}
     // ==========================================
     // STATE 6: POKEMON MENU
     // ==========================================
@@ -904,6 +907,9 @@ bool BattleUI::Update() {
 
             if (finished) {
                 // NOW drain messages from BattleManager (they were queued during UseItem)
+                if (m_PokeballAnimator->CatchSucceeded()) {
+                    m_Player->AddPokemon(m_EnemyPokemon);
+                }
                 auto& msgQueue = m_BattleLogic->m_MessageQueue;
                 while (!msgQueue.empty()) {
                     m_DialogueQueue.push(msgQueue.front());

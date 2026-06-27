@@ -215,6 +215,7 @@ void PokemonMenu::Hide() {
     ClearSlots();
     m_Confirmed = false;
     m_Cancelled = false;
+    m_ActionSelected = false;
 }
 
 // ──────────────────────────────────────
@@ -264,13 +265,20 @@ bool PokemonMenu::Update() {
     }
 
     if (m_Mode == Mode::PREVIEW) {
-        if (Util::Input::IsKeyDown(Util::Keycode::Z) || Util::Input::IsKeyDown(Util::Keycode::X) || Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
-            m_Cancelled = true; 
-            return true; // Any key dismisses the preview when browsing
+    if (Util::Input::IsKeyDown(Util::Keycode::Z)) {
+        m_ActionSelected = true;
+        m_Confirmed = true;
+        return true;
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::X) || 
+        Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+        m_Cancelled = true;
+        return true;
         }
     }
     return false;
 }
+
 void PokemonMenu::UpdateCursorPosition() {
     if (m_PartySize == 0 || m_CursorIndex >= m_PartySize) return;
 

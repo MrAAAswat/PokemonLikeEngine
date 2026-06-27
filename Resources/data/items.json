@@ -33,7 +33,7 @@
     {
       "id": 251,
       "texture": "PokeBall.png",
-      "shopTexture": "MASTERBALL.png",
+      "shopTexture": "ULTRABALL.png",
       "name": "Ultraball",
       "category": "POKEBALLS",
       "zIndex": 0.5,
@@ -43,7 +43,7 @@
     {
       "id": 252,
       "texture": "PokeBall.png",
-      "shopTexture": "ULTRABALL.png",
+      "shopTexture": "MASTERBALL.png",
       "name": "Masterball",
       "category": "POKEBALLS",
       "zIndex": 0.5,

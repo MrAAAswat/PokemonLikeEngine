@@ -140,16 +140,24 @@ void App::InitSystems() {
         m_PendingRewardQty  = npc->GetRewardQuantity();
         m_PendingRewardCategory = npc->GetRewardItemCategory();
         m_PendingRewardMoney = npc->GetRewardMoney();
-        m_PendingRewardCategory = m_ActiveNPC->GetRewardItemCategory();  // ← ADD THIS
-
 
         m_Character->SetVisible(false);
         m_Map->SetVisible(false);
         m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npc->GetParty(), m_PendingBattleFlag);
         
-        PlayBGM(RES + "/audio/bgm/Battle roaming.mp3");
+        // ─── NEW AUDIO LOOKUP LAYER ──────────────────────────────────
+        std::string battleTrack = GetMapBGM(npc->GetInteractFlag());
+        
+        // If it handed back the overworld default, it means this NPC has no custom music.
+        // Switch it to use the default battle music instead!
+        if (battleTrack == GetMapBGM("DEFAULT")) {
+            battleTrack = GetMapBGM("DEFAULT_BATTLE");
+        }
+        
+        PlayBGM(battleTrack);
+
         m_CurrentState = State::BATTLE;
-    }
+        }
         );
     
 }
@@ -410,30 +418,41 @@ void App::ProcessStartMenuState() {
 
 void App::ProcessPokemonMenuState() {
     if (m_PokemonMenu->Update()) {
-        
-        // 1. If we are currently looking at a Preview, exiting returns us to the Grid List
+
+        // 1. Returning from PREVIEW
         if (m_PokemonMenu->GetMode() == PokemonMenu::Mode::PREVIEW) {
+            if (m_PokemonMenu->IsActionSelected()) {
+                // Player confirmed the swap — do it
+                int selectedIdx = m_PokemonMenu->GetSelectedIndex();
+                auto& party = m_Character->GetParty();
+                if (selectedIdx >= 0 && selectedIdx < static_cast<int>(party.size()) && party[selectedIdx]) {
+                    // Swap selected pokemon to front
+                    std::swap(party[0], party[selectedIdx]);
+                    LOG_TRACE("Swapped party[0] with party[%d]", selectedIdx);
+                }
+            }
+            // Either way, return to grid list
             m_PokemonMenu->Show(m_Character->GetParty());
             return;
         }
 
-        // 2. If we pressed 'Z' while hovering over a Pokemon in the Grid List, show the Preview
+        // 2. Z on grid list — show preview
         if (m_PokemonMenu->IsActionSelected()) {
             int selectedIdx = m_PokemonMenu->GetSelectedIndex();
             auto party = m_Character->GetParty();
-            if (selectedIdx >= 0 && selectedIdx < static_cast<int>(party.size()) && party[selectedIdx]){
-                LOG_TRACE("Opening preview for index %d.", selectedIdx);
+            if (selectedIdx >= 0 && selectedIdx < static_cast<int>(party.size()) && party[selectedIdx]) {
+                m_SwapIndex = selectedIdx; // remember who we're swapping
                 m_PokemonMenu->ShowPreview(*party[selectedIdx]);
             }
             return;
         }
 
-        // 3. Otherwise (Pressed 'X'), Exit the Pokemon menu and go back to Start Menu
+        // 3. X — exit back to start menu
         LOG_TRACE("Exited POKEMON menu");
         m_PokemonMenu->Hide();
         m_StartMenu->SetVisible(true);
         m_CurrentState = State::START_MENU;
-        m_SwapIndex = -1; 
+        m_SwapIndex = -1;
         return;
     }
 }
@@ -863,8 +882,18 @@ void App::ProcessDialogueState() {
 
             m_Character->SetVisible(false);
             m_Map->SetVisible(false);
-            m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npcParty, flag);
-
+            m_BattleUI->StartTrainerBattle(m_Character->GetParty(), npcParty, m_PendingBattleFlag);
+            
+            // Look up the specific conversation flag
+            std::string battleTrack = GetMapBGM(flag);
+            
+            // If no specific music exists for this dialogue flag, use the default battle music
+            if (battleTrack == GetMapBGM("DEFAULT")) {
+                battleTrack = GetMapBGM("DEFAULT_BATTLE");
+            }
+            
+            PlayBGM(battleTrack);
+            
             m_CurrentState = State::BATTLE;
             break;
         }
@@ -1077,43 +1106,59 @@ void App::PlayBGM(const std::string& path, bool loop) {
 
 
 std::string App::GetMapBGM(const std::string& mapPath) {
-    // These static variables persist across function calls
     static std::unordered_map<std::string, std::string> s_MapBGM;
     static bool s_ConfigLoaded = false;
 
-    // 1. One-time setup: Load the JSON from the disk on the first request
     if (!s_ConfigLoaded) {
-        std::string configPath = RES + "/data/bgm_mapping.json";
+        // 1. Try loading from your standard data folder first
+        std::string configPath = RES + "/data/bgm_mapping.json"; 
         std::ifstream file(configPath);
+        
+        // Fallback to config folder if data folder isn't used
+        if (!file.is_open()) {
+            configPath = RES + "/config/bgm_mapping.json";
+            file.open(configPath);
+        }
 
         if (file.is_open()) {
             try {
                 nlohmann::json jsonConfig;
                 file >> jsonConfig;
-
-                // Transfer data from JSON into our ultra-fast runtime lookup map
                 for (auto& [key, value] : jsonConfig.items()) {
                     s_MapBGM[key] = value.get<std::string>();
                 }
                 s_ConfigLoaded = true;
-            } 
-            catch (const std::exception& e) {
-                LOG_INFO("JSON Parsing Error in bgm_mapping: {}", e.what());
+                LOG_INFO("Successfully loaded bgm_mapping.json");
+            } catch (const std::exception& e) {
+                LOG_ERROR("BGM JSON Parsing Error: {}", e.what());
             }
             file.close();
         } else {
-            LOG_INFO("Critical: Could not open BGM configuration file at '{}'", configPath);
+            LOG_ERROR("Could not open bgm_mapping.json from /data/ or /config/ paths!");
         }
     }
 
-    // 2. Scan our cached memory map for partial matching strings
-    for (const auto& [key, bgm] : s_MapBGM) {
-        if (key != "DEFAULT" && mapPath.find(key) != std::string::npos) {
-            return RES + bgm;
-        }
+    // 2. Sanitize incoming path string (extract pure filename/key)
+    std::string cleanKey = mapPath;
+    
+    // Strip directories (removes "C:/.../Resources/maps/")
+    size_t lastSlash = cleanKey.find_last_of("/\\");
+    if (lastSlash != std::string::npos) {
+        cleanKey = cleanKey.substr(lastSlash + 1);
+    }
+    
+    // Strip extensions if present (removes ".json" or ".tmx")
+    size_t lastDot = cleanKey.find_last_of(".");
+    if (lastDot != std::string::npos) {
+        cleanKey = cleanKey.substr(0, lastDot);
     }
 
-    // 3. Fallback to our data-driven default string, or hardcode a final safety net
+    // 3. Direct Key Lookup (highly reliable and case-sensitive matching)
+    if (s_MapBGM.find(cleanKey) != s_MapBGM.end()) {
+        return RES + s_MapBGM[cleanKey];
+    }
+
+    // 4. Fallback sequence if no specific match is found
     if (s_MapBGM.find("DEFAULT") != s_MapBGM.end()) {
         return RES + s_MapBGM["DEFAULT"];
     }

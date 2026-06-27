@@ -309,6 +309,9 @@
       "actionData": "Grant",
       "itemCategory": "GENERAL",
       "flagOnInteract": "defeated_ta_lab",
+      "facing":"Left",
+      "sightRange": 4,
+      "sightDirection": "Left",
       "movement": {
         "type": "LOOK_AROUND",
         "moveInterval": 1.8,
@@ -1012,7 +1015,8 @@
         "default": [
           "Welcome to NTUT",
           "You've now enrolled into the CSIE course",
-          "You're first task is to defeat"
+          "You're first task is to complete the OOP course",
+          "Go to the Tech building and defeat all that stands in your way!"
         ]
       }
     },
@@ -1122,6 +1126,54 @@
         "default": [
           "There's a small tree blocking the path",
           "If we had an axe we could cut it down"
+        ]
+      }
+    }
+    ,
+            {
+      "id": 139,
+      "texture": "TreeObstical",
+      "visualOffsetY": 0.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "CHECK_ITEM",
+      "actionData": "Axe_Item",
+      "itemCategory": "KEY_ITEMS",
+      "flagOnInteract": "treeblock2_cleared",
+      "flagToHide": "treeblock2_cleared",
+      "facing": "Down",
+      "movement": {
+        "type": "STILL",
+        "moveInterval": 2.0,
+        "wanderRadius": 0,
+        "patrolPoints": [],
+        "facing": "Left"
+      },
+      "dialogue": {
+        "default": [
+          "There's a small tree blocking the path",
+          "If we had an axe we could cut it down"
+        ]
+      }
+    },
+        {
+      "id": 140,
+      "texture": "Professor",
+      "visualOffsetY": -12.0,
+      "zIndex": 0.8,
+      "dynamicZ": true,
+      "action": "BATTLE", 
+      "facing": "Down",
+      "actionData": "professor_boss",
+      "flagOnInteract": "event_NTUT_boss", 
+      "flagToHide":"event_NTUT_boss",
+      "movement": {
+        "type": "STILL"
+      },
+      "dialogue": {
+        "default": [
+          "Here is your final challenge",
+          "Are you ready to pass OOP?"
         ]
       }
     }
