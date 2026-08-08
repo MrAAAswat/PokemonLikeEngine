@@ -29,6 +29,14 @@ The project is written primarily in **C++**, using CMake for builds and JSON for
 
 ![battlesystem](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/BattleSystem.png)
 
+![party](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/PokemonTeam.png)
+
+Players earn money through battles, which can be spent at shops or NPC vendors on items to help them on their journey. Items can also be picked up directly from the overworld or received as battle/interaction rewards.
+
+![store](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Store.png)
+
+Items persist across save files and are viewable in the inventory menu, sorted into three categories: General, Poké Balls, and Key Items.
+
 ![inventory](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Inventory.png)
 
 ## Controls
@@ -69,6 +77,23 @@ The project is written primarily in **C++**, using CMake for builds and JSON for
 ```
 
 `App` owns the `GameState`, which holds the current `Player`, `MapManager`, `BattleManager`, and `Inventory`. `MapManager` loads CSV tile data and manages collision via a grid of `Tile` objects. `BattleManager` is a state machine that drives combat using `Pokemon` and `Trainer` (enemy AI). All JSON data is loaded into singleton `Database` classes (e.g. `PokemonDatabase::getInstance()`) for global access.
+
+## Map System
+
+Maps use a **multi-layered tilemap** approach authored as CSV files:
+
+- **Ground Layer** — base terrain (grass, water, floor)
+- **Prop / Interactive Layer** — collision data, NPC placements, and lootable items
+
+Each tile carries properties (walkable, animated, interaction ID). Before moving, the game checks the next tile's `isWalkable` flag; a **Prop ID** system handles more complex interactions, like entering a cave or triggering a warp.
+
+![startTownCSV](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/startTownCSV.png)
+
+![startTown](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/startTownWideShot.png)
+
+NPCs, props, and their behavior (dialogue trees, shop inventories, animation rules) are configured through data files rather than hardcoded, making it easy to expand towns without touching game logic.
+
+![data](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/NPP&PropsDatabase.png)
 
 ## Getting Started
 
