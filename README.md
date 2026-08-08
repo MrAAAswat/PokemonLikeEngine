@@ -1,97 +1,108 @@
-# Pokemon
+# Pokémon – 2D Open-World RPG
 
-## Abstract
-**Members:** 柳艾德，阿木樂
+A 2D Pokémon-style open-world RPG built on the **PTSD (Practical Tools for Simple Design)** framework from the OOPL course. Explore a multi-map world, capture Pokémon, and battle Gym Leaders in turn-based combat.
 
-## Game Introduction
-Pokemon is a 2D open-world RPG with turn-based gameplay, where the player can explore different areas, collect different Pokemons, and battle against different bosses.
+**Members:** Abdulahad Aswat ([MrAAAswat](https://github.com/MrAAAswat)), G.Amarjargal Eddie ([UncleAmra](https://github.com/UncleAmra))
+
+![start](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/CollectStarter.png)
 
 ---
 
-## Development Timeline
+## About
 
-### Week 00:
-- 項目一
-- 項目二
-### Week 01: Proposal
-- 項目一 Proposal
-- 項目二
-### Week 02: Character Assets
-- 項目一 Collect spritesheets for our our character's movements as well as NPCs and working on our trainer class
-- 項目二 Implement Input Handler for 4-directional grid-based movement.
-### Week 03: Map Design
-- 項目一 Collect assests for our map and towns. The map is made of many towns with routes connecting them and a single town have multiple buildings like a gym (boss fight), hospital (pokemon centre) and NPC homes. The routes in between the towns can comprise of different environments and scenery like forests, caves or regular roads.
-- 項目二 Implement a Tilemap System or Image-based background loading.
-### Week 04: Map Levels
-- 項目一 Implement Collision Detection (Restricting player movement on water/walls).
-- 項目二 Implement NPC interaction logic (Dialogue boxes using PTSD text rendering).
-### Week 05: Puzzles & Obstacles
-- 項目一 Create interactable objects (e.g., items to pickup).
-- 項目二
-### Week 06: Combat Assets
-- 項目一 Collect UI assets (Battle menus, HP bars, move selection boxes).
-- 項目二 Design the Battle Scene State (Transitioning from Map to Battle).
-### Week 07: Pokemon Assets
-- 項目一 Gather front/back sprites for the initial Pokémon roster.
-- 項目二 Create a Base Pokémon Class (Attributes: HP, Attack, Defense, Type).
-### Week 08: 期中 Demo
-- 項目一 Core Loop: Walking on map. Encountering NPC/Wild Pokémon.
-- 項目二 Basic UI display of character stats.
-### Week 09: 期中 Demo
-- 項目一 Core Loop: Walking on map. Encountering NPC/Wild Pokémon.
-- 項目二 Basic UI display of character stats.
-### Week 10: Adding Consumables & Small Assets
-- 項目一 Implement Inventory System (Potions, Pokéballs, Key Items).
-- 項目二
-### Week 11: Adding Consumables & Small Assets
-- 項目一 Design Item Pickup logic on the map.
-- 項目二 Add "Bag" UI to the main menu.
-### Week 12: Combat Mechanics
-- 項目一 Implement Turn-based Logic (Player Turn Enemy AI Turn).
-- 項目二 Code the Move/Skill system (Damage calculation formula).
-### Week 13: Combat Mechanics
-- 項目一 Implement Status Effects (Paralysis, Poison) and Type Advantages.
-- 項目二 Add EXP gain and Level-up logic.
-### Week 14: Boss Fights
-- 項目一 Implement Trainer Battle logic (Handling multiple Pokémon in a party).
-- 項目二 Design the Gym Leader AI (Specific move priorities).
-### Week 15: Boss Fight
-- 項目一 Implement "Victory" rewards (Badges or specific Items).
-- 項目二
-### Week 16: Sound Design & Refining Assets
-- 項目一 Integrate BGM (Town, Route, Battle) and SFX (Bumps, Attacks).
-- 項目二
-### Week 17: 提交
-- 拍攝影片
-- 製作遊戲簡報
-- 驗收並提交 驗收並提交
+Players can freely explore a multi-map world made of interconnected towns and routes. Each town features a BOSS battle (not always a gym), a Pokémon Center for healing, a shop system, and NPCs with dialogue and quests. Routes vary in terrain — forests, ordinary paths, and more — for varied scenery.
 
+The project is written primarily in **C++**, using CMake for builds and JSON for game data (items, moves, encounters, NPCs, props).
 
+![Overworld](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/NTUTmap.png)
 
+## Features
 
+- **Exploration & Movement** — grid-based 4-directional movement with tile collision (walls, water, buildings, NPCs)
+- **NPC Interaction** — talk to NPCs with `Z`; open the start menu with `I` (overworld only)
+- **Pokémon Collection** — encounter wild Pokémon in tall grass and capture them into your party
+- **Turn-Based Battles** — move/skill system with damage formulas and type effectiveness (super-effective / not very effective)
+- **Leveling** — Pokémon gain EXP and level up after battle
+- **Gym Battles** — each town's Gym Leader has priority-based AI; defeating them rewards a Badge or key item
+- **Inventory & Shop** — earn money from battles, buy items from shops/NPCs, and manage potions, Poké Balls, and key items in a categorized inventory
+- **Persistent Saves** — full world state is saved, including player position, party, inventory, and progression flags
 
+![battlesystem](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/BattleSystem.png)
 
-# PTSD Template
+![inventory](https://raw.githubusercontent.com/UncleAmra/113590030--110590042/main/ScreenShots/Inventory.png)
 
-This is a [PTSD](https://github.com/ntut-open-source-club/practical-tools-for-simple-design) framework template for students taking OOPL2024s.
+## Controls
 
-## Quick Start
+| Key | Action |
+| --- | --- |
+| Arrow Keys | Move |
+| `Z` | Interact with NPCs / confirm |
+| `I` | Open start menu (overworld only) |
 
-1. Use this template to create a new repository
-   ![github screenshot](https://github.com/ntut-rick/ptsd-template/assets/126899559/ef62242f-03ed-481d-b858-12b730c09beb)
+## Project Structure
 
-2. Clone your repository
+```text
+├── PTSD/                # Core PTSD framework (provided by course)
+├── include/              # Header files (*.hpp)
+│   ├── App.hpp           # Main application loop and scene state manager
+│   ├── Character.hpp     # Base class for moving entities (Player, NPCs)
+│   ├── Player.hpp        # Player logic, input mapping, party, and inventory
+│   ├── NPC.hpp            # Non-player characters with dialogue trees
+│   ├── Map.hpp            # Map loading, grid parsing, and layer rendering
+│   ├── Pokemon.hpp        # Pokémon stats, types, moves, and logic systems
+│   ├── BattleManager.hpp  # Battle system finite state machine (FSM)
+│   ├── *Menu.hpp          # UI windows (InventoryMenu, ShopMenu, StartMenu)
+│   └── *Database.hpp      # Singletons for game databases (Item, Move, Trainer)
+├── src/                  # Implementation source files (*.cpp)
+│   ├── main.cpp           # Game entry point
+│   └── [Matching .cpp files for the headers above]
+├── Resources/            # Game assets and configuration data
+│   ├── data/               # JSON data files (items, moves, encounters)
+│   ├── maps/                # CSV tile maps and map grid structural files
+│   ├── Pokémon/             # Front and back combat sprites
+│   ├── UI/ & Fonts/         # Menus, text assets, and HUD components
+│   └── [dialogue/, items/, npcs/, player/, tiles/, trainers.JSON]
+├── ScreenShots/          # Project screenshots
+├── CMakeLists.txt        # Main build configuration
+├── files.cmake           # Source compilation unit list
+└── savegame.json         # Persistent global game save file slot
+```
+
+`App` owns the `GameState`, which holds the current `Player`, `MapManager`, `BattleManager`, and `Inventory`. `MapManager` loads CSV tile data and manages collision via a grid of `Tile` objects. `BattleManager` is a state machine that drives combat using `Pokemon` and `Trainer` (enemy AI). All JSON data is loaded into singleton `Database` classes (e.g. `PokemonDatabase::getInstance()`) for global access.
+
+## Getting Started
+
+This project is built directly on top of the PTSD framework (included as regular tracked files, no submodule required).
+
+1. Clone the repository:
 
    ```bash
-   git clone YOUR_GIT_URL --recursive
+   git clone https://github.com/MrAAAswat/PokemonLikeEngine.git
    ```
 
-3. Build your project
+2. Build the project:
 
-  > [!WARNING]
-  > Please build your project in `Debug` because our `Release` path is broken D:
-   
+   > [!WARNING]
+   > Build in `Debug` mode — `Release` paths are not fully configured.
+
    ```sh
    cmake -DCMAKE_BUILD_TYPE=Debug -B build # -G Ninja
+   cmake --build build
    ```
-   better read [PTSD README](https://github.com/ntut-open-source-club/practical-tools-for-simple-design)
+
+For more on the underlying framework, see the [PTSD README](https://github.com/ntut-open-source-club/practical-tools-for-simple-design).
+
+## Built With
+
+- **PTSD** — rendering, input, and audio framework ([practical-tools-for-simple-design](https://github.com/ntut-open-source-club/practical-tools-for-simple-design))
+- **CMake** — build system
+- **nlohmann/json** — JSON parsing for game data
+
+## Credits
+
+Developed as the final project for OOPL 2026 at NTUT.
+
+| Member | Contribution |
+| --- | --- |
+| Abdulahad Aswat | 60% |
+| G.Amarjargal Eddie | 40% |
